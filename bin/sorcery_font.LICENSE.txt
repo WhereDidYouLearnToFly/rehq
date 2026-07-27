@@ -1,0 +1,11 @@
+Sorcery font, part of the ZX Origins collection.
+Copyright (c) 1988-2023 Damien Guard. https://damieng.com/zx-origins/
+
+Free to use in games (commercial or non-commercial). Credit appreciated:
+"Sorcery font by DamienG https://damieng.com/zx-origins" in a credits screen
+if one exists. Do not re-host or redistribute the font files themselves.
+
+sorcery_font.bin is Sorcery.ch8 from the Spectrum/ folder of the official
+download (dl.damieng.com/fonts/zx-origins/Sorcery.zip), unmodified: a raw
+768-byte 8x8 bitmap, 96 characters (ASCII 32-127, Sinclair layout - pound
+sign at 0x60, copyright sign at 0x7F), same shape as bin/terminal_font.bin.
