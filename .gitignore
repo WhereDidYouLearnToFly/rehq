@@ -1,0 +1,5 @@
+out/
+*.sna
+*.sld
+*.lst
+assets_generated.asm

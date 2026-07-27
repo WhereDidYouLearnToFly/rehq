@@ -1,0 +1,13 @@
+{
+  "name": "re_hq",
+  "model": "128k",
+  "main": "main.asm",
+  "build": {
+    "args": [
+      "--fullpath",
+      "{main}"
+    ],
+    "output": "main.sna"
+  },
+  "assets": []
+}
