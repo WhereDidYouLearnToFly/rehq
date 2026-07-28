@@ -9,7 +9,8 @@
 ; It updates three bitmasks, all sharing one layout regardless of which
 ; control scheme is active:
 ;
-;       bit 0  FIRE     bit 1  UP     bit 2  DOWN     bit 3  LEFT    bit 4  RIGHT
+;   bit 0  FIRE   bit 1  UP   bit 2  DOWN   bit 3  LEFT   bit 4  RIGHT
+;   bit 5  FIRE2  bit 6  FIRE3   bit 7  START        (extended Kempston only)
 ;
 ;   input.pressed_buttons   held down right now
 ;   input.down_buttons      went down since the last call   (edge)
@@ -17,6 +18,11 @@
 ;
 ; A set bit means pressed. The raw hardware is active-low; the inversion
 ; happens once, in update_state, so nothing downstream has to think about it.
+;
+; Bits 5-7 only ever carry the three buttons an extended Kempston interface
+; adds; every other scheme, and a classic Kempston interface, reads them as
+; released. So code that only cares about the classic five can ignore them
+; entirely, and code that wants them needs no setup to get them.
 ;
 ; Before check_input does anything useful a scheme must be chosen. Either call
 ; one of the use_* entries directly, or leave the default in place and let
@@ -31,6 +37,18 @@ UP                  equ %00000010
 DOWN                equ %00000100
 LEFT                equ %00001000
 RIGHT               equ %00010000
+
+; Extended Kempston only. On a Mega Drive pad FIRE is B, FIRE2 is C and
+; FIRE3 is A - the hardware numbers the fire lines in port-bit order, which
+; is not the order the letters are printed on the pad.
+FIRE2               equ %00100000
+FIRE3               equ %01000000
+START               equ %10000000
+
+; Isolates the three lines only an extended interface drives. Written in port
+; bit order, but they land on the same bit positions in our order too - they
+; pass through check_kempston unrotated.
+KEMPSTON_MASK       equ FIRE2|FIRE3|START
 
 ; Keyboard half-rows, as written to the high byte of port $FE.
 ROW_09876           equ $ef             ; 0 9 8 7 6
@@ -73,11 +91,13 @@ control_selection:
                     ; Kempston fire. There is no reliable way to detect the
                     ; interface itself - an absent one leaves the bus floating,
                     ; which commonly reads $FF - so require a plausible value:
-                    ; some button down, but not every line at once.
+                    ; some button down, but not every line at once. Any of the
+                    ; eight will do, so an extended pad can be picked with A, C
+                    ; or Start as readily as with fire.
                     in a, (KEMPSTON_PORT)
                     cp $ff
                     ret z
-                    and %00011111
+                    and a
                     ret z
                     jr use_kempston
 
@@ -166,13 +186,35 @@ check_qaop_space:
                     jp update_state
 
 ;-----------------------------------------------------------------------------
-; check_kempston - port $1F, active HIGH, 000FUDLR. Once inverted to match the
-; keyboard convention the low five bits are an exact mirror of ours, so the
-; remap is a 5-bit reversal.
+; check_kempston - port $1F, active HIGH. Classic interfaces drive five lines,
+;
+;       bit  7 6 5   4 3 2 1 0
+;            0 0 0   F U D L R
+;
+; and extended ("Mega Drive") ones drive all eight, adding three buttons above
+; the classic fire:
+;
+;       bit  7 6 5   4 3 2 1 0
+;            S A C   B U D L R          S = Start, and B/C/A are the pad's
+;                                       three face buttons in port-bit order
+;
+; The low five are an exact mirror of our bit order once inverted, so they need
+; a 5-bit reversal. The top three already sit where FIRE2/FIRE3/START want
+; them, so they pass straight through.
+;
+; One read serves both kinds of interface - there is nothing to switch on and
+; no mode to select. A classic interface leaves its three unused lines at 0,
+; and the cpl that turns active-HIGH into the active-LOW convention turns those
+; zeroes into ones, which is exactly what "released" means downstream. So the
+; extra buttons simply read as never pressed, with no special case for them.
+;
+; Entry: -
+; Exit:  a = pressed_buttons, via update_state. Corrupts b, c, d.
 ;-----------------------------------------------------------------------------
 check_kempston:
                     in a, (KEMPSTON_PORT)
                     cpl                         ; active HIGH -> active LOW
+                    ld d, a                     ; keep a copy for bits 5-7
                     ld b, 0
                     ld c, 5
 .reverse:
@@ -180,8 +222,14 @@ check_kempston:
                     rl b                        ; ...and in at the bottom of b
                     dec c
                     jr nz, .reverse
-                    ld a, b
-                    or %11100000                ; unused bits = released
+
+                    ; d still carries the low five in *hardware* order and b
+                    ; carries the same five in ours, so the copy has to be cut
+                    ; down to the extras before the merge - OR the two whole
+                    ; and the orderings smear over each other.
+                    ld a, d
+                    and KEMPSTON_MASK           ; the three extra buttons, in place
+                    or b                        ; merged with the reversed five
                     jp update_state
 
 ;-----------------------------------------------------------------------------
