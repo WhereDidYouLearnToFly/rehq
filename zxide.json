@@ -1,6 +1,6 @@
 {
   "name": "re_hq",
-  "model": "128k",
+  "model": "48k",
   "main": "main.asm",
   "build": {
     "args": [

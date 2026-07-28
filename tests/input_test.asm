@@ -31,6 +31,11 @@
 
                     device zxspectrum48
 
+; The org has to come before the includes: without it the modules assemble
+; from address 0, i.e. underneath the ROM, and SAVESNA only writes $4000-$FFFF
+; - so every call into them would land in the ROM instead.
+                    org $8000
+
                     include "../core/input.asm"
 
 DISPLAY_ATTRS       equ 22528
@@ -46,8 +51,6 @@ ROW_HELD            equ 8
 ROW_DOWN            equ 12
 ROW_UP              equ 16
 HOLD                equ 12              ; frames an edge stays visible
-
-                    org $8000
 
 start:
                     di

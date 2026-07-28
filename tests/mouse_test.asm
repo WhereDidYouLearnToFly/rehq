@@ -4,8 +4,14 @@
 ; Open this file in zxide and press F5 (Kempston Mouse must be enabled in
 ; the emulator/interface). Move the mouse and click its buttons.
 ;
-;   - a crosshair sprite should track the physical mouse 1:1, with no drift
-;     and no jump when it wraps the interface's internal 8-bit counters
+;   - the crosshair should follow the physical mouse in the right direction on
+;     both axes - in particular down should mean down, since the interface's
+;     Y counter runs the opposite way to screen Y and mouse.read negates it
+;   - it should not drift, and should not jump when the interface's internal
+;     8-bit counters wrap
+;   - it moves in 8-pixel steps horizontally and 1-pixel steps vertically.
+;     That is display.draw_8x8 rounding x down to a character column, not the
+;     mouse: watch the X readout, which moves one unit at a time
 ;   - X/Y readout at the bottom should stay in 0..255 / 0..191, clamping
 ;     rather than wrapping at the screen edges
 ;   - the three button rows work like input_test's: HELD tracks the button
@@ -21,10 +27,15 @@
 
                     device zxspectrum48
 
-                    include "core/mouse.asm"
-                    include "core/gfx/screen.asm"
-                    include "core/gfx/draw_display.asm"
-                    include "core/gfx/draw_text.asm"
+; The org has to come before the includes: without it the modules assemble
+; from address 0, i.e. underneath the ROM, and SAVESNA only writes $4000-$FFFF
+; - so every call into them would land in the ROM instead.
+                    org $8000
+
+                    include "../core/mouse.asm"
+                    include "../core/gfx/screen.asm"
+                    include "../core/gfx/draw_display.asm"
+                    include "../core/gfx/draw_text.asm"
 
 ATTR_ON             equ %01000100       ; bright, black paper, green ink -> solid green
 ATTR_OFF            equ %00001000       ; blue paper, black ink -> dim
@@ -36,8 +47,6 @@ ROW_HELD            equ 8
 ROW_DOWN            equ 12
 ROW_UP              equ 16
 HOLD                equ 12              ; frames an edge stays visible
-
-                    org $8000
 
 start:
                     di

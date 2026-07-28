@@ -21,6 +21,11 @@
 
                     device zxspectrum48
 
+; The org has to come before the includes: without it the modules assemble
+; from address 0, i.e. underneath the ROM, and SAVESNA only writes $4000-$FFFF
+; - so every call into them would land in the ROM instead.
+                    org $8000
+
                     include "../core/gfx/screen.asm"
                     include "../core/gfx/draw_display.asm"
                     include "../core/gfx/draw_attribs.asm"
@@ -37,8 +42,6 @@ BRIGHT_YELLOW       equ %01000110
 ; PAPER - two attributes with the same paper would wipe invisibly.
 WIPE_FROM           equ %01001000       ; bright, blue paper
 WIPE_TO             equ %00000111       ; black paper
-
-                    org $8000
 
 start:
                     di

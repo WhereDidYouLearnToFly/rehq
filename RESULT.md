@@ -1,3 +1,21 @@
+> **Historical document — do not read as a description of the current tree.**
+>
+> This is the analysis of the *pre-refactor* sources, kept for the reasoning
+> behind the changes that followed. Much of what it describes no longer exists:
+> `sys/memmap.i`, `sys/game.asm`, `core/sfx/beeper.asm`, `data/*.asm`,
+> `macros/` and `test.asm` have all gone, and the tree is now a git repository.
+>
+> Spot-checking the "Bugs, worst first" list against the current sources: the
+> `adc hl` / `rla` sweeps are done (the remaining `rla`s are in `core/zx0.asm`,
+> where they are the bit reader and correct), `Panel8x8` / `Panel16x16` now use
+> `BLOCK 8` / `BLOCK 32`, `draw_panel` stores its own arguments, every module in
+> `core/` uses `MODULE`, Kempston input is implemented, and the RNG seed is a
+> full word. The identifiers this document says to rename were renamed again
+> during the refactor — `core/math.asm` is the authority, not the names here.
+>
+> Do not treat any individual item below as still-open without re-checking it
+> against the file it names; the line numbers are all stale.
+
 # re_hq — Code Analysis
 
 Review of the Z80 / ZX Spectrum engine sources in this tree (`core/`, `data/`, `sys/`).

@@ -8,9 +8,14 @@
 ; Call mouse.init once at startup, then mouse.read once per frame (typically
 ; from the interrupt handler, same as input.check_input). After that:
 ;
-;   mouse.x, mouse.y        cursor position, clamped to the pixel screen -
-;                            0..255, 0..191 - so they drop straight into
-;                            display.draw_8x8's b/c for a cursor sprite
+;   mouse.x, mouse.y        cursor position in pixels, clamped to the screen -
+;                            0..255, 0..191 - ready for display.draw_8x8's b/c.
+;                            Note that draw_8x8 is a byte blitter: it rounds x
+;                            down to a character column, so a sprite drawn
+;                            straight from these snaps to 8-pixel steps
+;                            horizontally while moving 1 pixel at a time
+;                            vertically. x itself is exact; a smooth cursor
+;                            needs 8 pre-shifted frames selected on x AND 7.
 ;   mouse.pressed_buttons   held down right now
 ;   mouse.down_buttons      went down since the last call   (edge)
 ;   mouse.up_buttons        came up since the last call     (edge)
@@ -29,6 +34,11 @@
 ; clamping at the screen edges. Skipping this and using the raw port value
 ; directly is the standard mistake - the cursor jumps to the wrapped counter
 ; value instead of tracking motion.
+;
+; The Y counter also runs the opposite way to the screen: it increments as the
+; mouse moves away from the user, while screen y increases downwards. read
+; negates the y delta so mouse.y is already in screen space and callers never
+; have to think about it.
 ;=============================================================================
 
                     MODULE mouse
@@ -89,7 +99,10 @@ read:
                     ld hl, raw_y
                     ld d, (hl)
                     ld (hl), a
-                    sub d
+                    sub d                       ; a = signed delta y, counting up
+                    neg                         ; ...but the interface counts up
+                                                ; as the mouse moves away from the
+                                                ; user, and screen y grows down
                     ld hl, y
                     ld c, MAX_Y
                     call move_axis
