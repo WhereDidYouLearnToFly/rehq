@@ -41,6 +41,9 @@ init_font:
 
     ;SFX
     include "core/audio/beeper.asm"
+    include "core/audio/ay.asm"
+    include "core/audio/music.asm"
+    include "core/audio/ptsplay.asm"
 
     ;GraphX
     include "core/gfx/draw_attribs.asm"

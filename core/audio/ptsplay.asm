@@ -30,9 +30,7 @@
 ; which this project does not use - the benches know what they embedded.
 ;=============================================================================
 
-        ifndef _pts_asm_defined
-        define _pts_asm_defined
-
+        org PTSPlayer
         MODULE PTS
         
 ;Universal PT2'n'PT3 Turbo Sound player for ZX Spectrum

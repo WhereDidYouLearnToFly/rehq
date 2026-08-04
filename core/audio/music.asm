@@ -47,9 +47,7 @@
 ; use frame_raw there, which does neither, because the handler in
 ; core/interrupt.asm already sets IY before chaining to the ROM.
 ;=============================================================================
-
-                    include "ptsplay.asm"
-
+                    org $6000
                     MODULE music
 
 SYSVARS             equ $5c3a           ; what the ROM ISR expects in IY
@@ -261,5 +259,3 @@ host_sp:            dw 0                        ; our SP, parked for the
 driver_sp:          dw 0                        ; the SP the block asked for
 
                     ENDMODULE
-
-                    include "ptsplay.asm"

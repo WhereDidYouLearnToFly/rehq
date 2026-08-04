@@ -61,7 +61,7 @@
 ; from address 0, i.e. underneath the ROM, and every call into them would
 ; land in the ROM instead.
                     org $8000
-
+                    include "../sys/memmap.i"
                     include "../core/audio/ay.asm"
                     include "../core/audio/music.asm"
 

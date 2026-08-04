@@ -1,4 +1,6 @@
-﻿        org Beeper
+﻿    SLOT 2
+    PAGE 2
+        org Beeper
         MODULE beeper
 
 enable:

@@ -1,3 +1,5 @@
+        SLOT 2
+        PAGE 2
         org Math
         MODULE math
 imul:

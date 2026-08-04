@@ -41,7 +41,10 @@
 ;  2. Altered source versions must be plainly marked as such, and must not be
 ;     misrepresented as being the original software.
 ;  3. This notice may not be removed or altered from any source distribution.
-        ;org DecompressorZX0
+        SLOT 2
+        PAGE 2
+        org DecompressorZX0
+        MODULE ZX0
 DecompressZX0:
         scf 
         ex      af, af'
@@ -248,3 +251,4 @@ ReadingLongGamma:                       ; this loop does not need unrolling, as 
         rla
 
         jr      ReadingLongGamma
+        ENDMODULE
