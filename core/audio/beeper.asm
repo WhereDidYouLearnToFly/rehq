@@ -1,4 +1,5 @@
 ﻿        org Beeper
+        MODULE beeper
 
 enable:
         ld hl, beeper.click_beep
@@ -17,7 +18,7 @@ long_beep:
         ld (length), de
         jp beep
 
-beeper.click_beep:
+click_beep:
         ret; nop
         ld hl, $5
         ld de, $2
@@ -42,3 +43,4 @@ beep:
 tone:   dw $5
 length: dw $2
 
+        ENDMODULE

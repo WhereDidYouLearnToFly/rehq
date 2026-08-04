@@ -1,224 +1,257 @@
-;=============================================================================
-; display - pixel blitters
-;=============================================================================
-; Placement:  no ORG. The including file decides where this lands.
-; Depends on: screen (addr_from_line, addr_from_char_xy, next_line)
-; Namespace:  MODULE display - every label below is reached as display.*
-;
-;   draw_8x8     one 8x8 tile at pixel coordinates
-;   draw_8xn     a column of bytes, any height, at pixel coordinates
-;   put_img      a rectangular block of bytes at character coordinates
-;   draw_panel   a 3x3 tiled frame of any size
-;
-; Sprite data is stored the way it lands on screen: one byte per pixel line,
-; top to bottom, and for put_img left to right within each line.
-;
-; None of these mask or clip. Drawing past the right edge wraps into the next
-; character row; drawing past the bottom runs off the display file entirely.
-; Clipping is the caller's job.
-;=============================================================================
+    org DrawDisplay
+    MODULE draw
 
-                    MODULE display
+get_scaddr:
+            push hl
+            xor a                    ; clear carry flag and accumulator.
+            ld d,a                   ; empty de high byte.
+            ld a,c                   ; vertical position
+            rla                      ; shift left to multiply by 2.
+            ld e,a                   ; place this in low byte of de pair.
+            rl d                     ; shift top bit into de high byte.
+            ld hl, screen.main       ; table of screen addresses.
+            add hl,de                ; point to table entry.
+            ld e,(hl)                ; low byte of screen address.
+            inc hl                   ; point to high byte.
+            ld d,(hl)                ; high byte of screen address.
+            ld a,b                   ; horizontal position
+            rra                      ; divide by two.
+            rra                      ; and again for four.
+            rra                      ; shift again to divide by eight.
+            and 31                   ; mask away rubbish shifted into rightmost bits.
+            add a,e                  ; add to address for start of line.
+            ld e,a                   ; new value of e register.
+            pop hl
+            ret                      ; return with screen address in de.
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+draw8x8_panel:                       ; hl pointer to plate8x8 data, bc(xcoords,ycoord)
+                                     ; de - wh (in symbols)
+            push hl
+            ;calc end coords
+            ld a, (panel_wchar)
+            rla
+            rla
+            rla
+            ld l, a
+            ld a, (panel_xpix)
+            add a, l
+            ld (panel_xpix_end), a
+            ;
+            ld a, (panel_hchar)
+            rla
+            rla
+            rla
+            ld l, a
+            ld a, (panel_ypix)
+            add a, l
+            ld (panel_ypix_end), a
+            ;draw corners
+            pop hl
+            push hl
+            ld bc, Panel8x8.TopLeft
+            adc hl, bc
+            ld bc, (panel_ypix)
+            call draw_8x8
+            ;
+            pop hl
+            push hl
+            ld bc, Panel8x8.BottomRight
+            adc hl, bc
+            ld bc, (panel_ypix_end)
+            call draw_8x8
+            ;
+            pop hl
+            push hl
+            ld bc, Panel8x8.TopRight
+            adc hl, bc
+            ld a, (panel_xpix_end)
+            ld b, a
+            ld a, (panel_ypix)
+            ld c, a
+            call draw_8x8
+            ;
+            pop hl
+            push hl
+            ld bc, Panel8x8.BottomLeft
+            adc hl, bc
+            ld a, (panel_xpix)
+            ld b, a
+            ld a, (panel_ypix_end)
+            ld c, a
+            call draw_8x8
+; ----- horizontals
+            pop hl
+            push hl
+            ld bc, Panel8x8.TopCenter
+            adc hl, bc
+            ld (WORD_TEMP2), hl         ;store pointer to TopCenter tile
+            pop hl
+            push hl
+            ld bc, Panel8x8.BottomCenter
+            adc hl, bc
+            ld (WORD_TEMP3), hl         ;store pointer to BottomCenter tile
+            ld a, (panel_wchar)
+            dec a
+            ld b, a
+            ld a, (panel_xpix)
+            ld c, a
+.horizontal_loop:
+            ld a, c
+            add a, $8
+            ld c, a
+            push bc
+            ld b, c
+            ld a, (panel_ypix)
+            ld c, a
+            push bc
+            ld hl, (WORD_TEMP2)         ;top
+            call draw_8x8
+            pop bc
+            ld a, (panel_ypix_end)
+            ld c, a
+            ld hl, (WORD_TEMP3)         ;bottom
+            call draw_8x8
+            pop bc
+            djnz .horizontal_loop
+; ----- verticals
+            pop hl
+            push hl
+            ld bc, Panel8x8.MidLeft
+            adc hl, bc
+            ld (WORD_TEMP2), hl         ;store pointer to MidLeft tile
+            pop hl
+            ld bc, Panel8x8.MidRight
+            adc hl, bc
+            ld (WORD_TEMP3), hl         ;store pointer to MidRight tile
+            ld a, (panel_hchar)
+            dec a
+            ld b, a
+            ld a, (panel_ypix)
+            ld c, a
+.vertical_loop:
+            ld a, c
+            add a, $8
+            ld c, a
+            push bc
+            ld a, (panel_xpix)
+            ld b, a
+            push bc
+            ld hl, (WORD_TEMP2)         ;left
+            call draw_8x8
+            pop bc
+            ld a, (panel_xpix_end)
+            ld b, a
+            ld hl, (WORD_TEMP3)         ;right
+            call draw_8x8
+            pop bc
+            djnz .vertical_loop
+            ret
 
-;-----------------------------------------------------------------------------
-; draw_8x8 - blit an 8x8 tile.
-; Entry: hl = tile data (8 bytes), b = x in pixels, c = y in pixels
-; Corrupts a, b, c, d, e, h, l.
-;
-; x is rounded down to a byte boundary - this is a byte blitter, not a
-; pixel-shifted one. For sub-byte placement you need pre-shifted frames.
-;-----------------------------------------------------------------------------
-draw_8x8:
-                    ld a, 8
-                    ; fall through
+panel_ypix:         .db 0
+panel_xpix:         .db 0
+panel_ypix_end:     .db 0
+panel_xpix_end:     .db 0
+panel_hchar:        .db 0
+panel_wchar:        .db 0
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-;-----------------------------------------------------------------------------
-; draw_8xn - blit a column of bytes, one per pixel line.
-; Entry: hl = data, a = height in pixel lines, b = x in pixels, c = y in pixels
-; Corrupts a, b, c, d, e, h, l.
-;-----------------------------------------------------------------------------
-draw_8xn:
-                    ld (rows), a
-                    push hl                     ; addr_from_line needs hl
-                    ld a, c
-                    call screen.addr_from_line
-                    ld a, b
-                    rrca                        ; x / 8 = byte column. The bits
-                    rrca                        ; rotated in at the top are
-                    rrca                        ; masked off, so rrca is safe.
-                    and 31
-                    or l                        ; l's low 5 bits are zero here
-                    ld e, a
-                    ld d, h
-                    pop hl                      ; hl = data, de = screen
-                    ld a, (rows)
-                    ld b, a
-.line:
-                    ld a, (hl)
-                    ld (de), a
-                    inc hl
-                    call screen.next_line
-                    djnz .line
-                    ret
+draw_8x8:                           ;from (hl) to screen pix bc(xcoords,ycoord in pixels) 
+            ld a, c
+            ld (BYTE_TEMP0),a
+            call get_scaddr
+            ld bc, $8               ;$8 - 8 bytes in 8x8 sprite
+.loop:
+            ldi
+            ld a, c
+            ld (WORD_TEMP0), hl
+            cp 0
+            jr nz, .next_line
+            ret
+.next_line:
+            ld a,(BYTE_TEMP0)       ; temporary vertical coordinate.
+            inc a                   ; next line down.
+            ld (BYTE_TEMP0),a       ; store new position.
+            and $3f                 ; are we moving to next third of screen? segment is 64 ($40) lines #3f - is last line num in seg
+            jr z, .next_seg         ; yes so find next segment.
+            and 7                   ; moving into character cell below? character is 8 lines (7 is last one)
+            jr z, .next_row         ; yes, find next row.
+            dec de                  ; not straddling 256-byte boundary here.
+            inc d                   ; next row of this character cell.
+.back_to_loop:
+            ld hl, (WORD_TEMP0)     ;restore pixels address
+            jp .loop
+.next_seg:
+            ex de, hl
+            ld de, 31               ; next segment is 30 bytes on.
+            add hl,de               ; add to screen address.
+            ex de, hl
+            jp .back_to_loop
+.next_row:
+            ex de, hl
+            ld de, $F91F             ;negative
+            add hl, de               ;sub
+            ex de, hl
+            jp .back_to_loop
 
-rows:               db 0
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+put_img_desized: ;hl - pointer to data, bc - xy (pixels), de - size
+            ld a, d
+            ld (BYTE_TEMP0), a
+            ld a, b
+            ld (BYTE_TEMP1), a
+            ;
+            push hl
+            ld a, c
+            rla
+            rla
+            rla                        ;get line number
+            call screen.get_display_table_by_pix_line
+            ld c, e
+            pop de                     ;de - pointer to data
+                                       ;hl - pointer to table
+put_img_loop:
+            push bc
+            ld a, 8
+put_img_char_loop:
+            push af
+            ;take line address
+            ld c, (hl)
+            inc hl
+            ld b, (hl)
+            inc hl
+            ;---------------------------bc has pointer to screen
+            push hl                     ;store - pointer to table
+            push bc                     ;bc -> hl
+            pop hl                      ;hl - pointer to screen
+            ld a, (BYTE_TEMP1)
+            ld b, 0
+            ld c, a
+            add hl, bc                  ;horizontal offset to the begining 
+            ;
+            ld a, (BYTE_TEMP0)          ;horizontal lenght
+            ld b, a
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+put_img_line_loop:
+put_img_ldade: ld a, (de)                  ;get from data
+put_img_hla:   ld (hl), a                  ;set to screen
+               inc hl
+               inc de
+            djnz put_img_line_loop
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+            pop hl                        ;hl - pointer to table
+            ;
+            pop af
+            dec a
+            jp nz, put_img_char_loop
+            pop bc
+            dec c
+            jp nz, put_img_loop
+            ret
 
-;-----------------------------------------------------------------------------
-; put_img - blit a rectangular block of bytes.
-; Entry: hl = data, b = column 0..31, c = row 0..23,
-;        d = width in bytes, e = height in character rows
-; Corrupts a, b, c, d, e, h, l.
-;
-; Height is in character rows rather than pixel lines because that is how
-; images are authored; the routine multiplies up.
-;-----------------------------------------------------------------------------
-put_img:
-                    ld (img_height), de         ; e -> img_height, d -> img_width
-                    push hl
-                    call screen.addr_from_char_xy
-                    ex de, hl                   ; de = screen
-                    pop hl                      ; hl = data
-                    ld a, (img_height)
-                    add a, a                    ; character rows -> pixel lines
-                    add a, a
-                    add a, a
-                    ld c, a
-.line:
-                    push de                     ; remember where this line began
-                    ld a, (img_width)
-                    ld b, a
-.byte:
-                    ld a, (hl)
-                    ld (de), a
-                    inc hl
-                    inc de
-                    djnz .byte
-                    pop de                      ; back to the line start...
-                    call screen.next_line       ; ...then straight down
-                    dec c
-                    jr nz, .line
-                    ret
+BYTE_TEMP0:     db $0
+BYTE_TEMP1:     db $0
+WORD_TEMP0:     dw $0
+WORD_TEMP2:     dw $0
+WORD_TEMP3:     dw $0
 
-img_height:         db 0
-img_width:          db 0                        ; must stay adjacent, in this order
-
-;-----------------------------------------------------------------------------
-; draw_panel - draw a frame from a 3x3 tile set.
-; Entry: hl = tile set, b = column, c = row,
-;        d = width in cells, e = height in cells   (both >= 2)
-; Corrupts a, b, c, d, e, h, l.
-;
-; The tile set is nine 8x8 tiles, 72 bytes, in reading order:
-;
-;       top-left     top-centre     top-right
-;       mid-left     centre         mid-right
-;       bottom-left  bottom-centre  bottom-right
-;
-; The centre tile fills the interior, so a panel covers what was underneath it.
-; For a hollow frame, make the centre tile blank.
-;
-; Every cell goes through draw_8x8, which corrupts every register, so the loop
-; state lives in memory rather than in registers.
-;-----------------------------------------------------------------------------
-draw_panel:
-                    ld (panel_src), hl
-                    ld (panel_h), de            ; e -> panel_h, d -> panel_w
-                    ld a, b
-                    ld (panel_x), a
-                    ld a, c
-                    ld (panel_y), a
-                    xor a
-                    ld (panel_row), a
-.row:
-                    xor a
-                    ld (panel_col), a
-.col:
-                    ld a, (panel_x)             ; cell -> pixel coordinates
-                    ld hl, panel_col
-                    add a, (hl)
-                    add a, a
-                    add a, a
-                    add a, a
-                    ld (panel_px), a
-                    ld a, (panel_y)
-                    ld hl, panel_row
-                    add a, (hl)
-                    add a, a
-                    add a, a
-                    add a, a
-                    ld c, a
-                    ld a, (panel_px)
-                    ld b, a
-
-                    push bc
-                    call select_tile            ; -> hl
-                    pop bc
-                    call draw_8x8
-
-                    ld hl, panel_col            ; next column
-                    inc (hl)
-                    ld a, (panel_w)
-                    cp (hl)
-                    jr nz, .col
-
-                    ld hl, panel_row            ; next row
-                    inc (hl)
-                    ld a, (panel_h)
-                    cp (hl)
-                    jr nz, .row
-                    ret
-
-;-----------------------------------------------------------------------------
-; select_tile - pick the tile for the current panel cell.
-; Exit: hl = tile address. Corrupts a, d, e.
-;
-; Each axis collapses to 0 (first), 1 (middle) or 2 (last), and the pair
-; indexes the 3x3 set. cp sets the flags and the following ld does not disturb
-; them, so the value can be loaded before the branch that selects it.
-;-----------------------------------------------------------------------------
-select_tile:
-                    ld a, (panel_col)
-                    and a
-                    ld e, 0
-                    jr z, .have_col
-                    ld hl, panel_w
-                    inc a
-                    cp (hl)                     ; is this the last column?
-                    ld e, 1
-                    jr nz, .have_col
-                    ld e, 2
-.have_col:
-                    ld a, (panel_row)
-                    and a
-                    ld d, 0
-                    jr z, .have_row
-                    ld hl, panel_h
-                    inc a
-                    cp (hl)                     ; is this the last row?
-                    ld d, 1
-                    jr nz, .have_row
-                    ld d, 2
-.have_row:
-                    ld a, d                     ; index = row * 3 + col
-                    add a, a
-                    add a, d
-                    add a, e
-                    add a, a                    ; * 8 bytes per tile
-                    add a, a
-                    add a, a
-                    ld e, a
-                    ld d, 0
-                    ld hl, (panel_src)
-                    add hl, de
-                    ret
-
-panel_src:          dw 0
-panel_h:            db 0
-panel_w:            db 0                        ; must stay adjacent, in this order
-panel_x:            db 0
-panel_y:            db 0
-panel_row:          db 0
-panel_col:          db 0
-panel_px:           db 0
-
-                    ENDMODULE
+    ENDMODULE

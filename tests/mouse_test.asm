@@ -2,7 +2,8 @@
 ; mouse_test - visual test bench for core/mouse.asm
 ;=============================================================================
 ; Open this file in zxide and press F5 (Kempston Mouse must be enabled in
-; the emulator/interface). Move the mouse and click its buttons.
+; the emulator/interface). Model 128K, matching zxide.json and main.asm.
+; Move the mouse and click its buttons.
 ;
 ;   - the crosshair should follow the physical mouse in the right direction on
 ;     both axes - in particular down should mean down, since the interface's
@@ -23,13 +24,36 @@
 ; bottom pixel line) its lowest rows draw past the end of the pixel display
 ; file. Harmless in this test (worst case some attribute-area garbage),
 ; but exactly why draw_display.asm documents clipping as the caller's job.
+;
+; 128K notes. Nothing in mouse.asm is machine specific - the interface is the
+; same on both - but this being a 128K snapshot, three things a 48K gives away
+; for free have to be set up by hand before the first ROM call or interrupt:
+;
+;   - ROM 1 has to be paged in. Every character this bench prints goes through
+;     the 48K BASIC ROM (RST $10, CHAN_OPEN, PR_STRING) and the whole frame
+;     loop is paced by that ROM's IM 1 handler at $0038. On a 128K that ROM is
+;     only present while bit 4 of $7FFD is set; with ROM 0 - the 128 editor -
+;     paged in instead, those addresses are unrelated code and the bench dies
+;     on its first print.
+;   - the screen bit has to be clear. Bit 3 of $7FFD picks which page the ULA
+;     displays, and everything here draws into the display file in page 5. Get
+;     it wrong and the bench runs perfectly with a blank screen.
+;   - I and the interrupt mode have to be pinned. A snapshot can arrive in
+;     IM 2 with a stale I, and screen.cls turns interrupts back on as it
+;     leaves, so the mode has to be set before that rather than next to the
+;     ei further down.
+;
+; The mouse ports need nothing: $FADF/$FBDF/$FFDF all have A1 high, so they
+; miss both the paging latch ($7FFD) and the AY ($FFFD/$BFFD), which only
+; answer with A1 low. Reads could not page anything anyway - the latch is
+; write only - but the addresses are clear of it either way.
 ;=============================================================================
 
-                    device zxspectrum48
+                    device zxspectrum128
 
 ; The org has to come before the includes: without it the modules assemble
-; from address 0, i.e. underneath the ROM, and SAVESNA only writes $4000-$FFFF
-; - so every call into them would land in the ROM instead.
+; from address 0, i.e. underneath the ROM, so every call into them would land
+; in the ROM instead. $8000 is page 2, which is never paged out.
                     org $8000
 
                     include "../core/mouse.asm"
@@ -42,6 +66,13 @@ ATTR_OFF            equ %00001000       ; blue paper, black ink -> dim
 ATTR_PAPER          equ %00000111       ; black paper, white ink
 
 DISPLAY_ATTRS       equ 22528
+
+BANK_PORT           equ $7ffd
+BANK_ROM48          equ %00010000       ; ROM 1 (48K BASIC), screen page 5,
+                                        ; page 0 at $C000
+IM1_I_VALUE         equ 63
+SYSVARS             equ $5c3a           ; what the ROM ISR expects in IY
+
 BLOCK_COL           equ 6
 ROW_HELD            equ 8
 ROW_DOWN            equ 12
@@ -50,10 +81,25 @@ HOLD                equ 12              ; frames an edge stays visible
 
 start:
                     di
-                    ld sp, $7fff
+                    ld sp, $7fff                ; page 5, above the display file
+
+                    ; Put the 128K into the state the rest of this file
+                    ; assumes, rather than inheriting whatever loaded the
+                    ; snapshot - see the 128K notes at the top.
+                    ld bc, BANK_PORT
+                    ld a, BANK_ROM48
+                    out (c), a
+
+                    ld a, IM1_I_VALUE
+                    ld i, a
+                    im 1
+                    ld iy, SYSVARS              ; the ROM ISR and the print
+                                                ; routines address the system
+                                                ; variables through IY
 
                     ld a, ATTR_PAPER
-                    call screen.cls
+                    call screen.cls             ; leaves interrupts enabled,
+                                                ; hence all of the above first
 
                     call text.open_upper
                     ld de, txt_title
@@ -64,7 +110,10 @@ start:
                     call text.print_string
 
                     call mouse.init
-                    ei                          ; IM 1: ROM keeps FRAMES alive
+                    ei                          ; already on after screen.cls;
+                                                ; explicit because the loop
+                                                ; below halts on the ROM's IM 1
+                                                ; interrupt
 
 main_loop:
                     halt

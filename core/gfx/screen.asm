@@ -1,189 +1,132 @@
-;=============================================================================
-; screen - ZX Spectrum display addressing, and whole-screen clears
-;=============================================================================
-; Placement:  no ORG. The including file decides where this lands.
-; Depends on: nothing.
-; Namespace:  MODULE screen - every label below is reached as screen.*
-;
-; The display file is not linear. A pixel address is
-;
-;       H = 0 1 0 T T L L L      TT  = which third (0..2)
-;       L = R R R C C C C C      LLL = pixel row within the character cell
-;                                RRR = character row within the third
-;                                CCCCC = character column
-;
-; so "one pixel line down" is three different operations depending on where
-; you are. Two routines below are the whole answer to that:
-;
-;   addr_from_line   random access - any line, from scratch
-;   next_line        the incremental step, for walking down a sprite
-;
-; next_line is the one that matters in inner loops. It is eight bytes of
-; branchy arithmetic that replaces a table lookup per line, and every blitter
-; in this engine is built on it.
-;=============================================================================
+﻿    org Screen
+    MODULE screen
 
-                    MODULE screen
+get_pix_addr_by_bc:                                 ;bc is char x,y
+          ld    a,c                               ;номер строки
+          call  GET_SCREEN_ADDR_FROM_ALINE        ;получаем в HL начальный адрес
+          ld    a,l                               ;берем значение младшего байта адреса
+          or    b                                 ;добавляем смещение в 11 байт (знакомест)
+          ld    l,a                               ;возвращаем в младший байт
+          ret
 
-PIXELS              equ $4000
-ATTRS               equ $5800
-PIXELS_LEN          equ 6144
-ATTRS_LEN           equ 768
+get_attr_addr_by_bc:                                ;bc is char x,y
+          push bc
+          ld h, c
+          ld d, 32
+          call math.imul
+          pop bc
+          ld d, 0
+          ld e, b
+          adc hl, de
+          ld de, DISPLAY_ATTRS
+          adc hl, de
+          ret
 
-;-----------------------------------------------------------------------------
-; addr_from_line - pixel address of the leftmost byte of a pixel line.
-; Entry: a  = pixel line 0..191
-; Exit:  hl = screen address. Corrupts a.
-;
-; Computed rather than looked up. The classic 192-entry table costs 384 bytes
-; and saves about 20 T-states; since the blitters call this once per sprite
-; and then use next_line, the table is not worth its space here.
-;-----------------------------------------------------------------------------
-addr_from_line:
-                    ld l, a
-                    and %00000111               ; LLL - row within the cell
-                    ld h, a
-                    ld a, l
-                    rra                         ; TT - which third, from bits 6-7
-                    rra
-                    rra
-                    and %00011000
-                    or h
-                    or $40                      ; display file starts at $4000
-                    ld h, a
-                    ld a, l
-                    and %00111000               ; RRR - char row within the third
-                    rlca
-                    rlca
-                    ld l, a
-                    ret
+get_display_table_by_pix_line:                         ;a is pixel line (0-191)
+          ld hl, main 
+          ld b, 0
+          ld c, a
+          add hl, bc
+          add hl, bc
+          ret                                         ;result is hl has pointer to pixel addre
 
-;-----------------------------------------------------------------------------
-; addr_from_char_xy - pixel address of the top-left byte of a character cell.
-; Entry: b = column 0..31, c = row 0..23
-; Exit:  hl = screen address. Corrupts a.
-;-----------------------------------------------------------------------------
-addr_from_char_xy:
-                    ld a, c
-                    add a, a                    ; row * 8 = its first pixel line
-                    add a, a
-                    add a, a
-                    call addr_from_line
-                    ld a, l                     ; low 5 bits of l are zero here,
-                    or b                        ; so the column just drops in
-                    ld l, a
-                    ret
+get_pix_addr_by_pix_line:                               ;a is pixel line (0-191)
+          call get_display_table_by_pix_line
+          ld c, (hl)
+          inc hl
+          ld b, (hl)
+          push bc
+          pop hl
+          ret
 
-;-----------------------------------------------------------------------------
-; attr_addr_from_char_xy - attribute address of a character cell.
-; Entry: b = column 0..31, c = row 0..23
-; Exit:  hl = attribute address. Corrupts a, d, e.
-;
-; Attributes are linear, so this is a plain multiply-add - no thirds, no
-; interleaving. This is why attribute effects are cheap and pixel ones are not.
-;-----------------------------------------------------------------------------
-attr_addr_from_char_xy:
-                    ld h, 0
-                    ld l, c
-                    add hl, hl                  ; row * 32
-                    add hl, hl
-                    add hl, hl
-                    add hl, hl
-                    add hl, hl
-                    ld d, 0
-                    ld e, b
-                    add hl, de
-                    ld de, ATTRS
-                    add hl, de
-                    ret
-
-;-----------------------------------------------------------------------------
-; next_line - move a screen address down one pixel line, in place.
-; Entry: de = screen address
-; Exit:  de = the address one pixel line below. Corrupts a.
-;
-; inc d moves down inside the character cell. When that carries out of the
-; low three bits the cell is finished, so the character row advances (e += 32).
-; If *that* carries we have also crossed into the next third - which inc d
-; happens to have already done, so d is left alone. If it did not, inc d
-; overshot and the third has to be handed back.
-;
-; Wrapping off the bottom of the screen is not checked for. Callers pass a
-; line count; nothing here defends against being asked for line 192.
-;-----------------------------------------------------------------------------
-next_line:
-                    inc d                       ; next pixel row in this cell
-                    ld a, d
-                    and 7
-                    ret nz                      ; still inside the cell - done
-                    ld a, e
-                    add a, 32                   ; next character row
-                    ld e, a
-                    ret c                       ; carried into the next third
-                    ld a, d
-                    sub 8                       ; undo inc d's third bump
-                    ld d, a
-                    ret
-
-;-----------------------------------------------------------------------------
-; clear_pixels - blank the whole pixel area.
-; Corrupts a, b, c, h, l. Leaves interrupts enabled.
-;
-; push writes two bytes and moves SP down by two, so pointing SP at the end of
-; the display file and pushing turns the stack into the fastest block-fill the
-; Z80 has - 11 T-states per two bytes against LDIR's 21. The cost is that SP
-; is not a stack for the duration, hence DI, and the real one is stashed in
-; the instruction that restores it.
-;-----------------------------------------------------------------------------
-clear_pixels:
-                    di
-                    ld (.restore_sp + 1), sp
-                    ld hl, 0                    ; the value written
-                    ld sp, PIXELS + PIXELS_LEN
-                    ld c, 3                     ; 3 * 256 * 8 = 6144 bytes
-.third:
-                    ld b, l                     ; b = 0, so djnz runs 256 times
-.block:
-                    push hl
-                    push hl
-                    push hl
-                    push hl
-                    djnz .block
-                    dec c
-                    jr nz, .third
-.restore_sp:
-                    ld sp, 0                    ; operand patched on entry
-                    ei
-                    ret
-
-;-----------------------------------------------------------------------------
-; fill_attrs - set every attribute cell.
-; Entry: a = attribute byte. Corrupts b, c, d, e, h, l.
-;-----------------------------------------------------------------------------
-fill_attrs:
-                    ld hl, ATTRS
-                    ld de, ATTRS + 1
-                    ld bc, ATTRS_LEN - 1
-                    ld (hl), a
-                    ldir
-                    ret
-
-;-----------------------------------------------------------------------------
-; cls - clear pixels, set every attribute, and match the border to the paper.
-; Entry: a = attribute byte. Corrupts everything except iy.
-;-----------------------------------------------------------------------------
 cls:
-                    push af
-                    call clear_pixels
-                    pop af
-                    push af
-                    call fill_attrs
-                    pop af
-                    and %00111000               ; paper colour...
-                    rrca
-                    rrca
-                    rrca                        ; ...into the border's low 3 bits
-                    out ($fe), a
-                    ret
+          ld a, (attrib)         ; blue ink (1) on yellow paper (6*8).
+          ld (PAPER_INK_BRIGHT0), a      ; set our screen colours.
+          call CLEAR_SCREEN_ROUTINE      ; clear the 
+          ld a, (border)
+          ld (SYS_BORDER), a
+          out ($fe), a                   ; write to port 254.
+          ret
 
-                    ENDMODULE
+clear_pixels:
+          di                   ;disable interrupt
+          ld (.stack + 1), sp  ;store current stack pointer
+          ld hl, 0             ;this value will be stored on stack
+          ld sp, 16384 + 6144
+          ld c, 3
+.loop2:
+          ld b, l             ;set B to 0. it causes that DJNZ will repeat 256 times
+.loop1:
+          push hl             ;store hl on stack
+          push hl             ;next
+          push hl             ;tkjhese four push instruction stores 8 bytes on stack
+          push hl
+          djnz .loop1          ;repeat for next 8 bytes
+          dec c
+          jr nz, .loop2
+.stack:
+          ld sp, 0            ;parameter will overwritten
+          ei
+
+fill_attributes:
+          ld hl, 22528          ;pixels 
+          ld de, 22528+1        ;pixels + 1
+          ld bc, 767            ;pixels area length - 1
+          ld a, (attrib)
+          ld (hl), a            ;set first byte to '0'
+          ldir                  ;copy bytes
+
+scaddr:   ;hl has pointer to addr table
+          push hl
+          xor a                    ; clear carry flag and accumulator.
+          ld d,a                   ; empty de high byte.
+          ld a,c                   ; vertical position
+          rla                      ; shift left to multiply by 2.
+          ld e,a                   ; place this in low byte of de pair.
+          rl d                     ; shift top bit into de high byte.
+          ;ld hl, screenbuffer_addr ; table of screen addresses.
+          add hl,de                ; point to table entry.
+          ld e,(hl)                ; low byte of screen address.
+          inc hl                   ; point to high byte.
+          ld d,(hl)                ; high byte of screen address.
+          ld a,b                   ; horizontal position
+          rra                      ; divide by two.
+          rra                      ; and again for four.
+          rra                      ; shift again to divide by eight.
+          and 31                   ; mask away rubbish shifted into rightmost bits.
+          add a,e                  ; add to address for start of line.
+          ld e,a                   ; new value of e register.
+          pop hl
+          ret                      ; return with screen address in de.
+
+
+main:
+          dw $4000,$4100,$4200,$4300,$4400,$4500,$4600,$4700
+          dw $4020,$4120,$4220,$4320,$4420,$4520,$4620,$4720
+          dw $4040,$4140,$4240,$4340,$4440,$4540,$4640,$4740
+          dw $4060,$4160,$4260,$4360,$4460,$4560,$4660,$4760
+          dw $4080,$4180,$4280,$4380,$4480,$4580,$4680,$4780
+          dw $40a0,$41a0,$42a0,$43a0,$44a0,$45a0,$46a0,$47a0
+          dw $40c0,$41c0,$42c0,$43c0,$44c0,$45c0,$46c0,$47c0
+          dw $40e0,$41e0,$42e0,$43e0,$44e0,$45e0,$46e0,$47e0
+          dw $4800,$4900,$4a00,$4b00,$4c00,$4d00,$4e00,$4f00
+          dw $4820,$4920,$4a20,$4b20,$4c20,$4d20,$4e20,$4f20
+          dw $4840,$4940,$4a40,$4b40,$4c40,$4d40,$4e40,$4f40
+          dw $4860,$4960,$4a60,$4b60,$4c60,$4d60,$4e60,$4f60
+          dw $4880,$4980,$4a80,$4b80,$4c80,$4d80,$4e80,$4f80
+          dw $48a0,$49a0,$4aa0,$4ba0,$4ca0,$4da0,$4ea0,$4fa0
+          dw $48c0,$49c0,$4ac0,$4bc0,$4cc0,$4dc0,$4ec0,$4fc0
+          dw $48e0,$49e0,$4ae0,$4be0,$4ce0,$4de0,$4ee0,$4fe0
+          dw $5000,$5100,$5200,$5300,$5400,$5500,$5600,$5700
+          dw $5020,$5120,$5220,$5320,$5420,$5520,$5620,$5720
+          dw $5040,$5140,$5240,$5340,$5440,$5540,$5640,$5740
+          dw $5060,$5160,$5260,$5360,$5460,$5560,$5660,$5760
+          dw $5080,$5180,$5280,$5380,$5480,$5580,$5680,$5780
+          dw $50a0,$51a0,$52a0,$53a0,$54a0,$55a0,$56a0,$57a0
+          dw $50c0,$51c0,$52c0,$53c0,$54c0,$55c0,$56c0,$57c0
+          dw $50e0,$51e0,$52e0,$53e0,$54e0,$55e0,$56e0,$57e0
+
+border:   db $00
+attrib:   db 104q
+
+    ENDMODULE

@@ -12,9 +12,6 @@
 ; interrupt.*; im2routine/im2table sit outside the module, pinned globals.
 ;=============================================================================
 
-IM1_I_VALUE         equ 63
-IM1_INTERRUPT       equ 56
-
                     MODULE interrupt
 
 ;-----------------------------------------------------------------------------
@@ -54,6 +51,7 @@ init_im1:
 ; --- IM2 handler: fixed address, outside module scope (see Placement above) ---
 ; Nothing else guards the region below, so an overrun in whatever was included
 ; ahead of this module would silently overwrite the handler.
+; zxide: pin its address is the fill byte in init_im2 doubled ($81 -> $8181)
                     ASSERT $ <= $8181
                     org $8181
 im2routine:
@@ -82,18 +80,6 @@ im2routine:
                     pop           bc
                     pop           hl
                     pop           af
-
-                    ; The ROM ISR addresses the system variables through IY, so
-                    ; IY has to be $5C3A across it - but the interrupted code
-                    ; may have been using IY itself. Call the ROM routine
-                    ; instead of jumping to it, so the caller's IY can be put
-                    ; back afterwards. (It saves AF/HL/BC/DE itself, which is
-                    ; why those are already restored here.)
-                    ld            iy, $5c3a
-                    call          IM1_INTERRUPT
-                    di                        ; the ROM ISR ends ei/ret; shut
-                                              ; interrupts off again before
-                                              ; touching the stack
                     pop           iy
                     ei
                     reti
@@ -106,6 +92,7 @@ on_tick:
                     ret
 
 ; Make sure this is on a 256 byte boundary
+                    ; zxide: pin
                     ASSERT $ <= $8200
                     org           $8200
 im2table:           defs          257
