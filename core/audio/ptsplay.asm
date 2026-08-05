@@ -1723,5 +1723,3 @@ MDLADDR EQU $
 ;Total size #908+#2BF=#BC7 (3015) bytes
 
        ENDMOD
-
-       endif

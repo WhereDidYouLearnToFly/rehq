@@ -47,7 +47,9 @@
 ; use frame_raw there, which does neither, because the handler in
 ; core/interrupt.asm already sets IY before chaining to the ROM.
 ;=============================================================================
-                    org $6000
+                    SLOT 2
+                    PAGE 2
+                    org $8FA4
                     MODULE music
 
 SYSVARS             equ $5c3a           ; what the ROM ISR expects in IY
