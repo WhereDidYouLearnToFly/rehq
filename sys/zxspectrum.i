@@ -1,4 +1,4 @@
-﻿IM1_I_VALUE                 equ 63          ;$3F
+IM1_I_VALUE                 equ 63          ;$3F
 IM1_INTERRUPT               equ 56          ;$38
 RETURN_KEY_ROUTINE          equ 654         ;$28E
 BEEPER_ROUTINE_HL_DE        equ 949         ;$3B5

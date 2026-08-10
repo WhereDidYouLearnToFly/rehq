@@ -1,234 +1,264 @@
-﻿    org Text
-    MODULE text
-
-set_screen:
-            ld a, 2               ; upper screen
-            call OPEN_SCREEN      ; open channel
-            ret
-
-print_de_string:
-            call PRINT_STRING_FROM_DE
-            ret
-
-print_bc_number:
-            call PUT_DEC_BC_TO_STACK ; stack number in bc.
-            call PRINT_TOP_STACK     ; display top of calc. stack.
-            ret 
-
-setxy_from_bc:
-            ld a,$16        ; ASCII control code for AT.
-            rst $10         ; print it.
-            ld a,c          ; vertical position.
-            rst $10         ; print it.
-            ld a,b          ; y coordinate.
-            rst $10         ; print it.
-            ret
-
-nolimit_teletype_print_hl:              ;set LINE_LENGTH to zero
-            ld a, 0
-            ld (LINE_LENGTH), a
-teletype_print_hl:                      ;if this is entry point then LINE_LENGTH should have max char number in the line
-            ld a, (LINE_LENGTH)
-            cp 0
-            jr z, .nolimit
-            ld b, a
-            ld a, (BYTE_TEMP0)
-            cp b
-            jr nz, .next_char
-            ld a, 0
-            ld (BYTE_TEMP0), a
-            jr .stop_char
-.next_char:
-            inc a
-            ld (BYTE_TEMP0), a
-.nolimit:            
-            ld a, (hl)                  ;читаем из строки очередной символ
-            and a                       ;проверяем на 0
-            jr nz, .teletype_print0      ;если нет, продолжаем
-.stop_char: ld a, ' '                   ;стираем изображение
-            rst   $10                   ; «печатающего квадрата»
-            ret                         ;выход
-.teletype_print0:
-            rst   $10                   ;печатаем считанный символ
-            inc   hl                    ;перемещаем указатель текущего
-                                        ;символа на следующий
-            push  hl                    ;сохраняем в стеке значение указателя
-            ld    de, PCURSOR           ;формируем изображение
-            ld    bc, 4                 ;«печатающего квадрата»
-            call  PRINT_STRING_FROM_DE
-            call  DROP_TEMP_ATTRIBS     ;сбрасываем временные атрибуты
-; ------------------
-; Задержка
-teletype_beep:
-            call beeper.click_beep
-            ld   bc, (DELAY)           ;пауза 1 - это 5/50 секунды
-            call PAUSE_BC              ;вызов подпрограммы PAUSE
-; ------------------
-            pop   hl                    ;восстанавливаем значение указателя
-            jr    teletype_print_hl     ;переход на начало цикла
+;=============================================================================
+; Text on screen, by two completely different mechanisms
+;=============================================================================
+; Placement:  org Text (sys/memmap.i). One file, two modules, because the two
+;             ways of getting a character on screen share nothing but a name.
 ;
-PCURSOR: .db  17,4,' ',8
-
-multiline_teletype_print_hl:            ;initial pos bc, a - line limit
-            ld (LINE_LENGTH), a
-            ld (WORD_TEMP0), bc
-.iter0:
-            call setxy_from_bc
-            call teletype_print_hl      ;type until 0 or LINE_LENGTH
-            ld bc, (WORD_TEMP0)
-            inc c
-            ld (WORD_TEMP0), bc
-            ld a, (BYTE_TEMP0)
-            cp 0
-            jr z, .iter0
-            ld a, 0
-            ld (BYTE_TEMP0), a
-            ret
-
-running_line_1pix:  ;a - length, b - x pos, c - line number
-            ld (BYTE_TEMP0), a
-            call screen.get_pix_addr_by_bc
-            ld a, (BYTE_TEMP0)
-            dec a
-            add a, l
-            ld l, a
-            ld c, 8
-.loop0:
-            ld d, 0
-            ld a, (BYTE_TEMP0)
-            ld b, a
-            and a
-            push hl
-.loop1:     
-            rl (hl)
-            dec hl
-            djnz .loop1
-            rl d
-            ; front
-            pop hl
-            ld a, (hl)
-            or d
-            ld (hl), a
-            ; to back
-            inc h
-            dec c
-            jr nz, .loop0
-            ret
-
-; Print a single character out to a screen address
-;  A: Character to print
-;  D: Character Y position
-;  E: Character X position
+;   MODULE direct_text - writes the screen directly. These poke display
+;   memory themselves. No channels, no set-up, no attributes touched, no
+;   scrolling and no "scroll?" prompt. Nothing to initialise before the first
+;   call. This is the path a game menu wants.
 ;
-print_char_pix:
-                    ld hl, 0x3C00                ; Character set bitmap data in ROM
-                    ld hl, (FONT_POINTER)        ; Character set bitmap data in ROM
+;   MODULE rom_text - through the ROM. These drive the channel system with
+;   RST $10, so they obey the current PAPER/INK, move the ROM's own cursor,
+;   scroll at the bottom of the screen and can raise the "scroll?" prompt.
+;   They need the 48 BASIC ROM paged in, IY = $5C3A (the ROM reaches its
+;   system variables through IY), and rom_text.open_upper called once first.
 ;
-                    ld b,0                       ; BC = character code
-                    ld c, a
-                    sla c                        ; Multiply by 8 by shifting
-                    rl b
-                    sla c
-                    rl b
-                    sla c
-                    rl b
-                    add hl, bc                   ; And add to HL to get first byte of character
-                    call get_char_address_pix    ; Get screen position in DE
-; Loop counter - 8 bytes per character
-                    ld b, 8
-.print_char_pix_L1: 
-                    ld a,(hl)               ; Get the byte from the ROM into A
-                    ld (de),a               ; Stick A onto the screen
-                    inc hl                  ; Goto next byte of character
-                    inc d                   ; Goto next line on screen
-                    djnz .print_char_pix_L1     ; Loop around whilst it is Not Zero (NZ)
+; The two module names answer one question: who writes the bytes. That is the
+; only difference between them, and it is worth being blunt about because the
+; old name for the first half was a `_pix` suffix, which everybody reads as
+; "pixel coordinates". It never meant that. BOTH modules are addressed in
+; character cells - column 0-31, row 0-23 - because one byte of the bitmap is
+; eight horizontal pixels, so putting a glyph anywhere but a byte boundary
+; would need a shift and a two-byte write, and neither of these does that.
+; Nothing here takes a pixel coordinate.
+;
+; Depends on: screen.get_pix_addr_by_bc (itself a ROM call), beeper.click_beep,
+;             and FONT_POINTER, which init_font sets to `fonts.font - 256` so
+;             that character code 32 is the first glyph actually stored.
+;=============================================================================
+
+                    SLOT 1
+                    PAGE 5
+                    org Text
+
+;=============================================================================
+                    MODULE direct_text
+;=============================================================================
+
+;-----------------------------------------------------------------------------
+; draw_string - HL = NUL-terminated string, D = row, E = column.
+;
+; Characters below 32 are skipped rather than drawn: they are control codes in
+; the ROM's world and no glyph is stored for them. Clips at the right edge
+; instead of running on - column 32 is the first byte of the next pixel row,
+; so without the check a long string reappears eight lines up, which is a
+; bewildering thing to debug.
+;-----------------------------------------------------------------------------
+draw_string:
+                    ld a, e
+                    cp 32
+                    ret nc                      ; off the right edge - clip
+                    ld a, (hl)
+                    and a
+                    ret z
+                    inc hl
+                    cp 32
+                    jr c, draw_string           ; a control code: skip it
+                    push de
+                    push hl
+                    call draw_char
+                    pop hl
+                    pop de
+                    inc e
+                    jr draw_string
+
+;-----------------------------------------------------------------------------
+; draw_string_mid - HL = string, D = row. Centres it on the row.
+;
+; Menus are full of this, and doing it at the call site means counting the
+; string by hand and recounting it every time the wording changes.
+;-----------------------------------------------------------------------------
+draw_string_mid:
+                    call string_length
+                    cp 32
+                    jr c, .fits
+                    ld a, 32                    ; too long to centre: start at
+.fits:                                          ; column 0 and let it clip
+                    neg
+                    add a, 32                   ; 32 - length
+                    srl a                       ; ...halved. `srl`, not `rra`:
+                    ld e, a                     ; the add above can leave carry
+                    jp draw_string              ; set, and rra would shift it in
+
+;-----------------------------------------------------------------------------
+; string_length - HL = NUL-terminated string. Returns A = length (0-255),
+; HL unchanged.
+;-----------------------------------------------------------------------------
+string_length:
+                    push hl
+                    ld b, 0
+.count:
+                    ld a, (hl)
+                    and a
+                    jr z, .done
+                    inc hl
+                    inc b
+                    jr .count
+.done:
+                    ld a, b
+                    pop hl
                     ret
 
-; Get screen address from a character (X,Y) coordinate
-; D = Y character position (0-23)
-; E = X character position (0-31)
-; Returns screen address in DE
+;-----------------------------------------------------------------------------
+; draw_char - A = character code, D = row, E = column.
+;-----------------------------------------------------------------------------
+draw_char:
+                    ld l, a
+                    ld h, 0
+                    add hl, hl                  ; eight bytes to a glyph
+                    add hl, hl
+                    add hl, hl
+                    ld bc, (FONT_POINTER)       ; stored base-256, so code 32
+                    add hl, bc                  ; is the first glyph in the font
+                    call cell_address           ; screen address into DE
+                    ld a, (invert_mask)
+                    ld c, a                     ; held in a register: this is
+                    ld b, 8                     ; the inner loop of every menu
+.row:
+                    ld a, (hl)
+                    xor c
+                    ld (de), a
+                    inc hl
+                    inc d                       ; the next pixel row of a cell
+                    djnz .row                   ; is 256 bytes on
+                    ret
+
+;-----------------------------------------------------------------------------
+; invert_mask - XORed into every glyph byte draw_char writes. 0 draws
+; normally, $FF draws it inverted.
 ;
-get_char_address_pix:
-                    ld a,d
+; This is how a menu marks the selected line. The alternative - painting the
+; attribute cells - cannot be undone without remembering what was underneath,
+; and it colours the whole 8x8 cell whether or not there is a glyph in it.
+;-----------------------------------------------------------------------------
+invert_mask:        db 0
+
+;-----------------------------------------------------------------------------
+; cell_address - D = row (0-23), E = column (0-31). Returns the screen address
+; of that cell's top pixel row in DE.
+;
+; The Spectrum's layout, low byte first: E = (row & 7) * 32 + column, and the
+; four `rra` are that multiply by 32 - `and 7` leaves the carry clear, so
+; rotating right four times through a 9-bit path brings the three bits back up
+; into the top three, which is a rotate left by five. D = $40 + (row & 24)
+; picks the third: $40, $48, $50.
+;-----------------------------------------------------------------------------
+cell_address:
+                    ld a, d
                     and %00000111
                     rra
                     rra
                     rra
                     rra
                     or e
-                    ld e,a
-                    ld a,d
+                    ld e, a
+                    ld a, d
                     and %00011000
                     or %01000000
-                    ld d,a
+                    ld d, a
                     ret
 
+;-----------------------------------------------------------------------------
+; The two effects work on a "strip": eight pixel rows of one character row,
+; `width` bytes across, starting at a character cell. Both need the caller to
+; keep column + width within 32 - a strip that runs off the right edge
+; continues into the next pixel row of the same cell, because that is what the
+; next address is. They live in this module because they rewrite the bitmap
+; directly, but note that both reach the screen through
+; screen.get_pix_addr_by_bc, which is itself a ROM call.
+;-----------------------------------------------------------------------------
+
+;-----------------------------------------------------------------------------
+; scroll_strip_left - A = width in bytes, B = column, C = row.
 ;
-;  My print routine
-;  HL: Address of the string
-;  D: Character Y position
-;  E: Character X position
+; One pixel per call, wrapping: the pixel pushed off the left edge comes back
+; in on the right. Call it once a frame for a marquee.
+;-----------------------------------------------------------------------------
+scroll_strip_left:
+                    ld (strip_width), a
+                    call screen.get_pix_addr_by_bc
+                    ld a, (strip_width)
+                    dec a
+                    add a, l                    ; start at the rightmost byte
+                    ld l, a
+                    jr nc, .rows
+                    inc h                       ; a carry out of the low byte is
+.rows:                                          ; the next pixel row, which is
+                    ld c, 8                     ; where the strip really goes
+.row:
+                    ld d, 0
+                    ld a, (strip_width)
+                    ld b, a
+                    and a                       ; clears carry: nothing shifts
+                    push hl                     ; in from the right yet
+.byte:
+                    rl (hl)                     ; right to left, so every byte
+                    dec hl                      ; takes the bit that fell out of
+                    djnz .byte                  ; the one to its right
+                    rl d                        ; d bit 0 = the pixel pushed off
+                    pop hl                      ; the left edge...
+                    ld a, (hl)
+                    or d                        ; ...put back on the right
+                    ld (hl), a
+                    inc h
+                    dec c
+                    jr nz, .row
+                    ret
+
+;-----------------------------------------------------------------------------
+; dissolve_strip - D = width in bytes, E = number of passes, B = column,
+; C = row. Eats the strip away a little more on each pass.
 ;
-print_string_pix:
-                    ld a, (hl)                  ; Get the character
-                    cp 0                        ; CP with 0
-                    ret z                       ; Ret if it is zero
-                    inc hl                      ; Skip to next character in string
-                    cp 32                       ; CP with 32 (space character)
-                    jr c, print_string_pix ; If < 32, then don't ouput
-                    push de                     ; Save screen coordinates
-                    push hl                     ; And pointer to text string
-                    call print_char_pix    ; Print the character
-                    pop hl                      ; Pop pointer to text string
-                    pop de                      ; Pop screen coordinates
-                    inc e                       ; Inc to the next character position on screen
-                    jr print_string_pix    ; Loop
+; The mask comes from address $0000 onwards - the ROM read as data. Sixteen
+; kilobytes of bytes with no pattern to them is a better random source than
+; anything worth writing, and it costs nothing. Two things follow: it only
+; clears bits, never sets them, so this can erase a strip but never restore
+; it; and it wants the 48 BASIC ROM paged in, because with TR-DOS or the 128
+; editor ROM in place the pattern is a different one.
+;-----------------------------------------------------------------------------
+dissolve_strip:
+                    push de
+                    call screen.get_pix_addr_by_bc
+                    ld (strip_addr), hl
+                    pop de
+                    ld a, d
+                    ld (strip_width), a
+                    ld a, e
+                    ld de, 0                    ; the mask reads on from here,
+.pass:                                          ; pass after pass
+                    ld (passes_left), a
+                    ld bc, 5
+                    call PAUSE_BC
+                    ld hl, (strip_addr)
+                    ld c, 8
+.row:
+                    ld a, (strip_width)
+                    ld b, a
+                    push hl
+.byte:
+                    push bc
+                    ld a, (hl)
+                    ld b, a
+                    ld a, (de)
+                    and b
+                    ld (hl), a
+                    inc hl
+                    inc de
+                    pop bc
+                    djnz .byte
+                    pop hl
+                    inc h
+                    dec c
+                    jr nz, .row
+                    ld a, (passes_left)
+                    dec a
+                    jr nz, .pass
+                    ret
 
-thaw_line:  ;d - length, e - iterations, b - x pos (char num), c - y pos (line num)
-            push de
-            call screen.get_pix_addr_by_bc     ;hl has address to bc
-            ld (WORD_TEMP0), hl
-            pop de
-            ld a, d
-            ld (LINE_LENGTH), a                ;store length
-            ld a, e
-            ld (BYTE_TEMP0), a
-            ld de, 0
-.thaw_loop:
-            ld (BYTE_TEMP0), a
-            ld bc, 5
-            call PAUSE_BC
-            ld hl, (WORD_TEMP0)
-            ld c, 8
-.loop0:
-            ld a, (LINE_LENGTH)
-            ld b, a
-            push hl
-.loop1:                                      ;thaw one interation
-            push bc
-            ld a, (hl)
-            ld b, a
-            ld a, (de)
-            and b
-            ld (hl), a
-            inc hl
-            inc de
-            pop bc
-            djnz .loop1                    ;loop1_end
-            pop hl
-            inc h
-            dec c
-            jr nz, .loop0                  ;loop0_end
-            ld a, (BYTE_TEMP0)
-            dec a
-            jr nz, .thaw_loop
-            ret
+strip_addr:         dw 0                        ; left edge of the strip
+strip_width:        db 0                        ; bytes across
+passes_left:        db 0                        ; dissolve_strip only
 
-
-DELAY: dw 1
-WORD_TEMP0: dw 0
-BYTE_TEMP0: db 0
-LINE_LENGTH: db 0
-
-    ENDMODULE
+                    ENDMODULE

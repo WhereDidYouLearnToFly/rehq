@@ -1,4 +1,5 @@
-﻿    MODULE main_menu
+    org $5F8A
+    MODULE main_menu
 init:
         ld a, $0
         ld bc, $0

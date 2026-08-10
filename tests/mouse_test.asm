@@ -101,13 +101,13 @@ start:
                     call screen.cls             ; leaves interrupts enabled,
                                                 ; hence all of the above first
 
-                    call text.open_upper
+                    call rom_text.open_upper
                     ld de, txt_title
                     ld bc, txt_title_len
-                    call text.print_string
+                    call rom_text.print_string
                     ld de, txt_labels
                     ld bc, txt_labels_len
-                    call text.print_string
+                    call rom_text.print_string
 
                     call mouse.init
                     ei                          ; already on after screen.cls;
@@ -172,7 +172,7 @@ main_loop:
 ;-----------------------------------------------------------------------------
 print3:
                     push af
-                    call text.set_cursor
+                    call rom_text.set_cursor
                     pop af
 
                     ld b, 0

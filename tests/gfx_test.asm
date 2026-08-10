@@ -12,7 +12,7 @@
 ;   3  put_img        a rectangular block at character coordinates
 ;   4  draw_panel     frames at 10x6, 6x3 and the 2x2 minimum, so every tile
 ;                     of the 3x3 set gets selected including all four corners
-;   5  print_string_pix / print_teletype_at
+;   5  direct_text.draw_string / rom_text.print_teletype_at
 ;   6  fill_rect      including one at row 0 with a non-zero column, which is
 ;                     exactly what the old version drew in the wrong place
 ;      copy_from_screen / copy_to_screen  - grab a region, stamp it elsewhere
@@ -46,7 +46,7 @@ WIPE_TO             equ %00000111       ; black paper
 start:
                     di
                     ld sp, $7fff
-                    call text.open_upper
+                    call rom_text.open_upper
                     ei
 
 ;-----------------------------------------------------------------------------
@@ -56,7 +56,7 @@ start:
                     call screen.cls
                     ld hl, msg_cls
                     ld de, $0000                ; row 0, column 0
-                    call text.print_string_pix
+                    call direct_text.draw_string
                     call wait_space
 
 ;-----------------------------------------------------------------------------
@@ -95,7 +95,7 @@ start:
 
                     ld hl, msg_blit             ; bottom row, clear of the column
                     ld de, $1702
-                    call text.print_string_pix
+                    call direct_text.draw_string
                     call wait_space
 
 ;-----------------------------------------------------------------------------
@@ -109,7 +109,7 @@ start:
                     call display.put_img
                     ld hl, msg_img
                     ld de, $0a00
-                    call text.print_string_pix
+                    call direct_text.draw_string
                     call wait_space
 
 ;-----------------------------------------------------------------------------
@@ -134,7 +134,7 @@ start:
 
                     ld hl, msg_panel
                     ld de, $0a00
-                    call text.print_string_pix
+                    call direct_text.draw_string
                     call wait_space
 
 ;-----------------------------------------------------------------------------
@@ -142,18 +142,18 @@ start:
 ;-----------------------------------------------------------------------------
                     ld a, PAPER_BLACK_INK_W
                     call screen.cls
-                    ld hl, msg_pix
+                    ld hl, msg_direct
                     ld de, $0202                ; row 2, column 2
-                    call text.print_string_pix
+                    call direct_text.draw_string
 
                     ld a, 255                   ; suppress the ROM's scroll? prompt
                     ld (SCR_CT), a
                     ld a, 2
-                    ld (text.delay_frames), a
+                    ld (rom_text.delay_frames), a
                     ld hl, msg_teletype
                     ld bc, $0206                ; column 2, row 6
                     ld a, 26                    ; wrap width
-                    call text.print_teletype_at
+                    call rom_text.print_teletype_at
                     call wait_space
 
 ;-----------------------------------------------------------------------------
@@ -189,7 +189,7 @@ start:
 
                     ld hl, msg_attr
                     ld de, $1600
-                    call text.print_string_pix
+                    call direct_text.draw_string
                     call wait_space
 
 ;-----------------------------------------------------------------------------
@@ -229,7 +229,7 @@ start:
                     call screen.cls
                     ld hl, msg_done
                     ld de, $0b00
-                    call text.print_string_pix
+                    call direct_text.draw_string
 .halt:
                     halt
                     jr .halt
@@ -314,7 +314,7 @@ msg_cls:            db "1 CLS - border should match paper", 0
 msg_blit:           db "2 BLIT - col 0 unbroken", 0
 msg_img:            db "3 PUT_IMG", 0
 msg_panel:          db "4 PANEL 10x6, 6x3, 2x2", 0
-msg_pix:            db "5 TEXT - direct to pixels", 0
+msg_direct:         db "5 TEXT - written straight to screen", 0
 msg_teletype:       db "Teletype with wrap at 26 columns, ending on a NUL.", 0
 msg_attr:           db "6 ATTRS - green at row 0 col 8", 0
 msg_done:           db "DONE", 0

@@ -1,4 +1,4 @@
-﻿    MODULE pictures
+    MODULE pictures
 screen_zx0:
     INCBIN "../Bin/ui/screen.scr.zx0"
 

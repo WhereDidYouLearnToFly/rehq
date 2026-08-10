@@ -1,13 +1,13 @@
 {
   "name": "re_hq",
   "model": "128k",
-  "main": "main.asm",
+  "main": "heroques.asm",
   "build": {
     "args": [
       "--fullpath",
       "{main}"
     ],
-    "output": "main.sna"
+    "output": "heroques.sna"
   },
   "assets": []
 }

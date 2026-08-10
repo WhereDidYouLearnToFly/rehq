@@ -215,6 +215,14 @@ Concretely: the teletype column counter in `draw_text.asm` lives in that shared 
 fill interleaved with a teletype run corrupts it. For an engine base meant to be built on, this is
 worth fixing before anything depends on it — give each module its own temps.
 
+> **Done for `draw_text.asm`.** It now owns every variable it touches, and is split into two
+> modules by mechanism: `direct_text` (writes display memory itself — `draw_char`,
+> `draw_string`, `draw_string_mid`, `invert_mask`, `scroll_strip_left`, `dissolve_strip`) and
+> `rom_text` (goes through the ROM's channels — `open_upper`, `print_string`, `print_number`,
+> `set_cursor`, `print_teletype*`). The `_pix` suffix is gone; it read as "pixel coordinates"
+> and never meant that. `draw_attribs.asm` and the shared temps in `core/math.asm` are still
+> as described above.
+
 ### Module boundaries are a naming convention, not a mechanism
 
 Only `draw_display.asm` actually uses `.module`. `screen.asm`, `draw_text.asm`, `draw_attribs.asm`,

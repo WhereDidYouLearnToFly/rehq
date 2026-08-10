@@ -1,4 +1,4 @@
-﻿    MODULE data
+    MODULE data
 panel8x8:
     INCBIN "../Bin/ui/frame.bin"
 

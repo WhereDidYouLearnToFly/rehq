@@ -1,4 +1,4 @@
-﻿    SLOT 2
+    SLOT 2
     PAGE 2
         org Beeper
         MODULE beeper

@@ -1,4 +1,4 @@
-﻿    MACRO DRAW_PANEL8x8 xy, wh, img
+    MACRO DRAW_PANEL8x8 xy, wh, img
             ld hl, xy
             ld a, h
             rla

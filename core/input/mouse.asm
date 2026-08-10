@@ -1,7 +1,6 @@
 ;=============================================================================
 ; mouse - Kempston Mouse: cursor position and button edge detection
 ;=============================================================================
-; Placement:  no ORG. The including file decides where this lands.
 ; Depends on: nothing.
 ; Namespace:  MODULE mouse - every label below is reached as mouse.*
 ;
@@ -40,7 +39,7 @@
 ; negates the y delta so mouse.y is already in screen space and callers never
 ; have to think about it.
 ;=============================================================================
-
+                    org $6022
                     MODULE mouse
 
 BUTTONS_PORT        equ $fadf
@@ -127,6 +126,57 @@ read:
                     ld a, d
                     ld (pressed_buttons), a
                     ret
+
+;-----------------------------------------------------------------------------
+; read_buttons - the mouse as an input scheme, for input.check_input to install.
+;
+; Only the left button, and only onto FIRE. A mouse has no directions to give:
+; it reports *motion*, and turning that into UP/DOWN/LEFT/RIGHT means choosing a
+; threshold and a feel, which is a game decision and not a driver one. The four
+; direction bits are therefore left released, and anything that wants the
+; pointer reads mouse.x/mouse.y after mouse.read - a separate call, because this
+; one deliberately does no delta tracking.
+;
+; Note the hardware bit order: LEFT is bit 1, not bit 0 (see BUTTON_LEFT above).
+; FIRE is bit 0, so the byte is rotated rather than passed through. To put the
+; other two buttons on FIRE2/FIRE3, keep bits 0-2 here and shift them up.
+;
+; Entry: -
+; Exit:  via input.update_state, so a = input.pressed_buttons. Corrupts b, c, d.
+;-----------------------------------------------------------------------------
+read_buttons:
+                    ld bc, BUTTONS_PORT
+                    in a, (c)
+                    or ~BUTTON_LEFT & $ff       ; release everything but LEFT...
+                    rrca                        ; ...and drop it into FIRE (bit 0)
+                    jp input.update_state
+
+;-----------------------------------------------------------------------------
+; read_scheme - the whole mouse for one frame. This is what input installs when
+; the player picks the mouse, so a single input.check_input keeps both the
+; pointer and the shared button masks up to date and nothing has to remember to
+; poll the mouse separately.
+;
+; `read` is left alone rather than folded in here: it is also useful on its own,
+; for a game that wants a cursor while the player steers with the keyboard.
+;-----------------------------------------------------------------------------
+read_scheme:
+                    call read                   ; x/y, and the mouse's own masks
+                    ; A conversion, not a second port read: `read` leaves the
+                    ; buttons in pressed_buttons, in this module's bit order.
+                    ld a, (pressed_buttons)     ; 1 = pressed, LEFT on bit 1
+                    rrca                        ; LEFT -> bit 0, where FIRE is
+                    cpl                         ; and back to 0 = pressed, which
+                    or ~input.FIRE & $ff        ; is what update_state expects
+                    jp input.update_state
+
+;-----------------------------------------------------------------------------
+; in_use - non-zero once the player has chosen the mouse, which is the only
+; reliable way to know one is fitted: an idle mouse and an absent one read the
+; same, so a click is the proof. The game tests this to decide whether to draw
+; a cursor and whether the pointer means anything.
+;-----------------------------------------------------------------------------
+in_use:             db 0
 
 ;-----------------------------------------------------------------------------
 ; move_axis - apply a signed delta to one axis variable, clamped to 0..max.

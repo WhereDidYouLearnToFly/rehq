@@ -1,4 +1,4 @@
-﻿    STRUCT Panel8x8
+    STRUCT Panel8x8
 TopLeft         BYTE
 TopCenter       BYTE
 TopRight        BYTE

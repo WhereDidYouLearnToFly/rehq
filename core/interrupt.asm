@@ -89,7 +89,7 @@ im2routine:
 ; Empty by default; replace this ret with a jp to game code once there is any.
 ;-----------------------------------------------------------------------------
 on_tick:
-                    ret
+                    jp game.onInterrupt
 
 ; Make sure this is on a 256 byte boundary
                     ; zxide: pin

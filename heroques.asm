@@ -17,25 +17,24 @@
     org AppStart                         ; Start of application
 
 appentry:
-                    SELECT_RAM_BANK 0
-                    SELECT_RAM_BANK 1
                     ld sp, $8000
                     ld a, 0
                     out ($FE), a
                     call init_font
                     call interrupt.init_im2
-                    ;call game.init
-wait_for_start:
-                    jp wait_for_start
+                    call game.init
+
 init_font:
                     ld hl, fonts.font-256
                     ld (FONT_POINTER), hl
                     ret
 
-
 ;Stack
 ;Core
-    include "core/input.asm"
+    include "core/input/input.asm"          ; the shared layout and dispatcher
+    include "core/input/keyboard.asm"       ; ...and one file per device below
+    ;include "core/input/kempston.asm"     ; joystick off: see control_selection
+    include "core/input/mouse.asm"
     include "core/math.asm"
     include "core/interrupt.asm"
 
@@ -48,16 +47,21 @@ init_font:
     ;GraphX
     include "core/gfx/draw_attribs.asm"
     include "core/gfx/draw_display.asm"
+    include "core/gfx/rom_text.asm"
     include "core/gfx/draw_text.asm"
     include "core/gfx/screen.asm"
 
     ;Game
     include "game/game.asm"
-    include "game/scenes/main_menu.asm"
+
+    ;Scenes
+    include "game/scenes/main_menu_scene.asm"
+    include "game/scenes/input_select_scene.asm"
 
     ;Data
     include "data/fonts.asm"
     include "core/zx0.asm"
+    include "assets_generated.asm"
 
     savesna "heroques.sna", appentry
 

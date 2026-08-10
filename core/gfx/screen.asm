@@ -1,4 +1,4 @@
-﻿    org Screen
+    org Screen
     MODULE screen
 
 get_pix_addr_by_bc:                                 ;bc is char x,y

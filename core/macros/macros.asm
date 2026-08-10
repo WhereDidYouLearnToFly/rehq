@@ -1,4 +1,4 @@
-﻿    MACRO INDIRECT_CALL paddr
+    MACRO INDIRECT_CALL paddr
         ld hl, $+14        ;3
         push hl            ;1
         ld hl, paddr       ;3
