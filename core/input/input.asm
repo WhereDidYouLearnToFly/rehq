@@ -37,7 +37,7 @@
 ; once they pick. input.wait_control blocks until then.
 ;=============================================================================
 
-                    org $60C5
+                    org $632D
                     MODULE input
 
 FIRE                equ %00000001

@@ -17,7 +17,7 @@
 ; into the accumulator - and because pressed is 0, AND is what accumulates.
 ;=============================================================================
 
-                    org $613D
+                    org $63A5
                     MODULE keyboard
 
 ; Keyboard half-rows, as written to the high byte of port $FE. Public because

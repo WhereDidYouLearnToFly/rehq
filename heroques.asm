@@ -7,8 +7,8 @@
     include "core/macros/gfx_macros.asm"
     include "core/macros/macros.asm"
 ;Structures
-    include "core/gfx/gfx_structures.asm"
-
+    include "core/gfx/gfx_structures.i"
+    include "game/menus/menu_structures.i"
 
     device zxspectrum128
     ; zxide: pin
@@ -33,10 +33,14 @@ init_font:
 ;Core
     include "core/input/input.asm"          ; the shared layout and dispatcher
     include "core/input/keyboard.asm"       ; ...and one file per device below
+    include "core/input/keys.asm"           ; digits and typing, beside the schemes
     ;include "core/input/kempston.asm"     ; joystick off: see control_selection
     include "core/input/mouse.asm"
     include "core/math.asm"
     include "core/interrupt.asm"
+
+    ;UI
+    include "game/menus/menus.asm"
 
     ;SFX
     include "core/audio/beeper.asm"
@@ -54,9 +58,14 @@ init_font:
     ;Game
     include "game/game.asm"
 
-    ;Scenes
+    ;Main Menu Scenes
     include "game/scenes/main_menu_scene.asm"
     include "game/scenes/input_select_scene.asm"
+    include "game/scenes/settings_scene.asm"
+    ;include "game/scenes/alch_shop_scene.asm"
+    ;include "game/scenes/characters_scene.asm"
+
+    ;Game Scene
 
     ;Data
     include "data/fonts.asm"

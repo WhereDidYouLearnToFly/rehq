@@ -3,9 +3,7 @@
     org $C000
     MODULE input_select
 
-PLATE_MSG:
-        .db "PRESS FIRE OR CLICK MOUSE"
-        .db 0
+PLATE_MSG: .db "PRESS FIRE OR CLICK MOUSE"
 
 init:
         call update_message_attribs
@@ -15,29 +13,25 @@ init:
         ld de, PLATE_MSG
         ld bc, 25
         call rom_text.print_string
-
         ret
 
 deinit:
-         ld a, 1
-         ld (menu_index), a
-         call update_message_attribs
-         ;jp game.init_epigraph
-.wait:  
-         jp .wait
+        jp game.set_main_menu_scene
+
 selected: .db 0
 ; One frame of this scene, then back to game.loop -- which is what halts, and
 ; what calls input.check_input. Looping here instead (with a halt of our own)
 ; meant the scene was entered once and never left, so the input masks were read
 ; exactly once in the life of the program and every key after that went nowhere.
-scene_loop:
+loop:
             call menu_ctrl
             ld a, (selected)
             and a
-            ret nz
+            jp nz, deinit
             jp toggle_color
 
-scene_interrupt:
+interrupt:
+            call input.check_input
             ;call ay.play_timed
             ;update counters
             ld hl, counters

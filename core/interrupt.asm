@@ -11,7 +11,8 @@
 ; Namespace:  MODULE interrupt - init_im2/init_im1 are reached as
 ; interrupt.*; im2routine/im2table sit outside the module, pinned globals.
 ;=============================================================================
-
+                    ; zxide: pin
+                    org $8162
                     MODULE interrupt
 
 ;-----------------------------------------------------------------------------

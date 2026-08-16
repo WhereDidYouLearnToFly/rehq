@@ -40,8 +40,8 @@
 
 pscene_init:      dw input_select.init
 pscene_deinit:    dw input_select.deinit
-pscene_loop:      dw input_select.scene_loop
-pscene_interrupt: dw input_select.scene_interrupt
+pscene_loop:      dw input_select.loop
+pscene_interrupt: dw input_select.interrupt
 
 pscene_init_call:
                 ld hl, (pscene_init)
@@ -59,8 +59,37 @@ pscene_interrupt_call:
                 ld hl, (pscene_interrupt)
                 jp (hl)
 
-set_main_menu:
-                ret
+set_main_menu_scene:
+                di
+                ld hl, main_menu.init
+                ld (pscene_init), hl
+
+                ld hl, main_menu.init
+                ld (pscene_deinit), hl
+
+                ld hl, main_menu.loop
+                ld (pscene_loop), hl
+
+                ld hl, main_menu.interrupt
+                ld (pscene_interrupt), hl
+                ei
+                jp init
+
+set_settings_scene:
+                di
+                ld hl, main_menu.init
+                ld (pscene_init), hl
+
+                ld hl, main_menu.init
+                ld (pscene_deinit), hl
+
+                ld hl, main_menu.loop
+                ld (pscene_loop), hl
+
+                ld hl, main_menu.interrupt
+                ld (pscene_interrupt), hl
+                ei
+                jp init
 
 set_game_play:
                 ret
@@ -70,11 +99,7 @@ init:
 
 loop:
                 halt
-                PERF_MARK 1             ; red: the frame's work starts here
-                call input.check_input
-                PERF_MARK 2             ; red: the frame's work starts here
                 call pscene_loop_call
-                PERF_MARK 0             ; black: done, the rest of the frame is idle
                 jp loop
 onInterrupt:
                 call pscene_interrupt_call

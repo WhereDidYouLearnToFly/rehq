@@ -39,7 +39,7 @@
 ; negates the y delta so mouse.y is already in screen space and callers never
 ; have to think about it.
 ;=============================================================================
-                    org $6022
+                    org $5F8A
                     MODULE mouse
 
 BUTTONS_PORT        equ $fadf
