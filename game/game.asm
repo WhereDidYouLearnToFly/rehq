@@ -33,7 +33,7 @@
 
     SLOT 1
     PAGE 5
-    ; zxide: size(100)
+    ; zxide: size(130)
     org Game
     MODULE game
 
@@ -59,48 +59,61 @@ pscene_interrupt_call:
                 ld hl, (pscene_interrupt)
                 jp (hl)
 
+;-----------------------------------------------------------------------------
+; The scene switch. A set_ entry is jumped to, never called: it replaces the
+; four pointers above and restarts the frame loop on the new scene, so there
+; is no way back to whoever asked for it.
+;
+; The entry points travel as a four word table copied in one ldir, in the same
+; order as the pscene_ words above - init, deinit, loop, interrupt. Reorder
+; one list and the other has to move with it.
+;-----------------------------------------------------------------------------
+set_input_select_scene:
+                ld hl, input_select_scene
+                jr set_scene
 set_main_menu_scene:
-                di
-                ld hl, main_menu.init
-                ld (pscene_init), hl
-
-                ld hl, main_menu.init
-                ld (pscene_deinit), hl
-
-                ld hl, main_menu.loop
-                ld (pscene_loop), hl
-
-                ld hl, main_menu.interrupt
-                ld (pscene_interrupt), hl
-                ei
-                jp init
-
+                ld hl, main_menu_scene
+                jr set_scene
 set_settings_scene:
+                ld hl, settings_scene
+                jr set_scene
+set_chartacters_scene:
+                ld hl, characters_scene
+                jr set_scene
+set_shop_scene:
+                ld hl, shop_scene
+                ; falls through
+set_scene:
                 di
-                ld hl, main_menu.init
-                ld (pscene_init), hl
-
-                ld hl, main_menu.init
-                ld (pscene_deinit), hl
-
-                ld hl, main_menu.loop
-                ld (pscene_loop), hl
-
-                ld hl, main_menu.interrupt
-                ld (pscene_interrupt), hl
+                ld de, pscene_init
+                ld bc, 8
+                ldir
                 ei
                 jp init
 
-set_game_play:
-                ret
+; Not a scene yet. A set_ entry never returns, so this cannot ret - it drops
+; back into the frame loop with the scene that is already running.
+set_game_play_scene:
+                jp loop
+
+input_select_scene: dw input_select.init, input_select.deinit
+                    dw input_select.loop, input_select.interrupt
+main_menu_scene:    dw main_menu.init, main_menu.deinit
+                    dw main_menu.loop, main_menu.interrupt
+settings_scene:     dw settings.init, settings.deinit
+                    dw settings.loop, settings.interrupt
+characters_scene:   dw characters_menu.init, characters_menu.deinit
+                    dw characters_menu.loop, characters_menu.interrupt
+shop_scene:         dw shop_menu.init, shop_menu.deinit
+                    dw shop_menu.loop, shop_menu.interrupt
 
 init:
                 call pscene_init_call
 
 loop:
                 halt
-                call pscene_loop_call
-                jp loop
+                jp pscene_loop_call
+
 onInterrupt:
                 call pscene_interrupt_call
                 ret

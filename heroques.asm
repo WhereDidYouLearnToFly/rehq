@@ -9,12 +9,13 @@
 ;Structures
     include "core/gfx/gfx_structures.i"
     include "game/menus/menu_structures.i"
+    include "game/globals.i"
 
     device zxspectrum128
     ; zxide: pin
     org $4000
     INCBIN "bin/ui/screen.scr"
-    org AppStart                         ; Start of application
+    org AppStart                            ; Start of application
 
 appentry:
                     ld sp, $8000
@@ -34,7 +35,7 @@ init_font:
     include "core/input/input.asm"          ; the shared layout and dispatcher
     include "core/input/keyboard.asm"       ; ...and one file per device below
     include "core/input/keys.asm"           ; digits and typing, beside the schemes
-    ;include "core/input/kempston.asm"     ; joystick off: see control_selection
+    ;include "core/input/kempston.asm"      ; joystick off: see control_selection
     include "core/input/mouse.asm"
     include "core/math.asm"
     include "core/interrupt.asm"
@@ -57,13 +58,14 @@ init_font:
 
     ;Game
     include "game/game.asm"
+    include "game/globals.asm"
 
     ;Main Menu Scenes
     include "game/scenes/main_menu_scene.asm"
     include "game/scenes/input_select_scene.asm"
     include "game/scenes/settings_scene.asm"
-    ;include "game/scenes/alch_shop_scene.asm"
-    ;include "game/scenes/characters_scene.asm"
+    include "game/scenes/alch_shop_scene.asm"
+    include "game/scenes/characters_scene.asm"
 
     ;Game Scene
 

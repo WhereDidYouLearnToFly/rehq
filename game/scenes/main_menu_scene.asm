@@ -1,45 +1,25 @@
     SLOT 3
     PAGE 0
-    org $C093
+    org $C09B
     MODULE main_menu
 
-;=============================================================================
-; The menu description
-;
-; Three tables, all of it data. A node carries an ID and an index into the
-; string table - it does not hold its own text, so retitling an entry, or
-; translating the whole menu, touches only the strings.
-;
-; The list is the two counts followed by the pointer arrays in the order the
-; struct documents: nodes first, then strings. The arrays are separate because
-; they are different lengths - the two title strings are not menu entries and
-; have no node.
-;
-; TEXT_ID indexes the string array, never the node array. Index by name and
-; the distinction stays harmless.
-;=============================================================================
-
-; What an entry does. The handler is looked up from this, since MenuNode no
-; longer carries a pointer.
 MENU_PLAY               equ 0
 MENU_SHOP               equ 1
 MENU_CHARACTERS         equ 2
 MENU_SETTINGS           equ 3
 
-; Position in the string array below.
-TEXT_HEROQUEST          equ 0
-TEXT_PACK_TITLE         equ 1
-TEXT_PLAY_GAME          equ 2
-TEXT_BUY_EQUIPMENT      equ 3
-TEXT_CHARACTERS         equ 4
-TEXT_SETTINGS           equ 5
+; the two titles are printed by label, not by node, so they are not in
+; the string array and have no TEXT_ id - these index .strings below.
+TEXT_PLAY_GAME          equ 0
+TEXT_BUY_EQUIPMENT      equ 1
+TEXT_CHARACTERS         equ 2
+TEXT_SETTINGS           equ 3
 
-; Where the entries land. Placeholder layout - one column, evenly spaced.
 ITEMS_COL               equ 10
 ITEMS_ROW               equ 7
 
-TITLE_ATTR                  equ 106q        ; bright yellow ink on black
-PACK_ATTR                   equ 107q        ; bright white ink on black
+TITLE_ATTR                  equ 106q
+PACK_ATTR                   equ 107q
 ITEM_ATTR                   equ 103q
 SELECTED_ATTR               equ 104q
 
@@ -50,22 +30,52 @@ BUY_EQUIPMENT_TEXT:     MENU_STRING "ALCHEMIST'S SHOP"
 CHARACTERS_TEXT:        MENU_STRING "CHARACTERS"
 SETTINGS_TEXT:          MENU_STRING "SETTINGS"
 
-node_play:              MenuNode MENU_PLAY,       TEXT_PLAY_GAME,       0, 0
-node_shop:              MenuNode MENU_SHOP,       TEXT_BUY_EQUIPMENT    0, 0
-node_characters:        MenuNode MENU_CHARACTERS, TEXT_CHARACTERS       0, 0
-node_settings:          MenuNode MENU_SETTINGS,   TEXT_SETTINGS         0, 0
+node_play:              MenuNode MENU_PLAY,       TEXT_PLAY_GAME,       play_action, 0, ITEM_ATTR, SELECTED_ATTR
+node_shop:              MenuNode MENU_SHOP,       TEXT_BUY_EQUIPMENT,   shop_action, 0, ITEM_ATTR, SELECTED_ATTR
+node_characters:        MenuNode MENU_CHARACTERS, TEXT_CHARACTERS,      characters_action, 0, ITEM_ATTR, SELECTED_ATTR
+node_settings:          MenuNode MENU_SETTINGS,   TEXT_SETTINGS,        settings_action, 0, ITEM_ATTR, SELECTED_ATTR
 
-main_list:              MenuList 1, 0, 4, 6, ITEMS_COL, ITEMS_ROW, ITEM_ATTR, SELECTED_ATTR
+main_list:              MenuList 1, 1, 0, 4, 4, ITEMS_COL, ITEMS_ROW
 .nodes:                 dw node_play, node_shop, node_characters, node_settings
-.strings:               dw STRING_HEROQUEST, STRING_PACK_TITLE
-                        dw PLAY_GAME_TEXT, BUY_EQUIPMENT_TEXT
+.strings:               dw PLAY_GAME_TEXT, BUY_EQUIPMENT_TEXT
                         dw CHARACTERS_TEXT, SETTINGS_TEXT
+
+;=============================================================================
+; Actions
+;=============================================================================
+
+play_action:
+                ;ld hl, game.set_game_play_scene
+                ;ld (next_scene), hl
+                ret
+
+shop_action:
+                ld hl, game.set_shop_scene
+                ld (next_scene), hl
+                ret
+
+characters_action:
+                ld hl, game.set_chartacters_scene
+                ld (next_scene), hl
+                ret
+
+settings_action:
+                ld hl, game.set_settings_scene
+                ld (next_scene), hl
+                ret
 
 ;=============================================================================
 ; Scene
 ;=============================================================================
 
 init:
+;
+                    ld a, 0
+                    call screen.cls_a
+;
+                    ld hl, 0
+                    ld (next_scene), hl
+;
                     ld  hl, main_list
                     call menus.init_menu
 ;
@@ -89,7 +99,11 @@ deinit:
         ret
 
 loop:
-        ret
+        ld hl, (next_scene)
+        ld a, h
+        or l                            ; only a null pointer is zero. Adding the
+        jp z, game.loop                 ; two halves read $01FF as null as well
+        jp (hl)
 
 interrupt:
         call input.check_input
@@ -99,5 +113,7 @@ interrupt:
         call menus.keyboard_process
 .mouse:
         ret
+
+next_scene: .dw 0
 
         ENDMODULE

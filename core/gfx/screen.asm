@@ -40,7 +40,8 @@ get_pix_addr_by_pix_line:                               ;a is pixel line (0-191)
           ret
 
 cls:
-          ld a, (attrib)         ; blue ink (1) on yellow paper (6*8).
+          ld a, (attrib)                 ; blue ink (1) on yellow paper (6*8).
+cls_a:
           ld (PAPER_INK_BRIGHT0), a      ; set our screen colours.
           call CLEAR_SCREEN_ROUTINE      ; clear the 
           ld a, (border)

@@ -6,6 +6,9 @@
 PLATE_MSG: .db "PRESS FIRE OR CLICK MOUSE"
 
 init:
+        ld a, 0
+        ld (selected), a
+;
         call update_message_attribs
         call rom_text.open_upper
         ld bc, $0412
@@ -19,16 +22,14 @@ deinit:
         jp game.set_main_menu_scene
 
 selected: .db 0
-; One frame of this scene, then back to game.loop -- which is what halts, and
-; what calls input.check_input. Looping here instead (with a halt of our own)
-; meant the scene was entered once and never left, so the input masks were read
-; exactly once in the life of the program and every key after that went nowhere.
+
 loop:
             call menu_ctrl
             ld a, (selected)
             and a
             jp nz, deinit
-            jp toggle_color
+            call toggle_color
+            jp game.loop
 
 interrupt:
             call input.check_input
@@ -40,15 +41,6 @@ interrupt:
             inc (hl)
             ret
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-; The press edge, not the level. Fire still held from whatever brought us here
-; must not select the moment this scene appears - with `pressed_buttons` it does,
-; and the screen looks like it skipped itself.
-;
-; `up_buttons` used to be in this OR and does not belong: it is a *release*, so
-; letting go of fire counted as pressing it and a single tap fired twice.
-; `down_buttons` covered `pressed_buttons` all along - a bit that went down this
-; frame is also down this frame - so dropping the level test loses nothing.
 menu_ctrl:
                 ld a, (input.down_buttons)
                 ld b, a

@@ -29,7 +29,7 @@
 ; state, so a 3 pressed during name entry does not vanish from get_digit.
 ;=============================================================================
 
-                    org $64D0
+                    org $6597
                     MODULE keys
 
 ; Keyboard half-rows, as written to the high byte of port $FE. Declared here

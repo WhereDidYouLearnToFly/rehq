@@ -17,10 +17,20 @@ AYPlayer                equ $5EA8
 Attributes              equ $8301       ; 00D7
 DrawDisplay             equ $901A       ; 0119 ? 400
 ;DrawBuffer             equ $8450       ; ??? ^^^^^^
-Text                    equ $5EBF       ; 00CB ; direct_text - writes the screen itself
+Text                    equ $5EDD       ; 00CB ; direct_text - writes the screen itself
 RomText                 equ $6100       ; 0084 ; rom_text - prints through the ROM
 Fonts                   equ $8850       ; 300
 Game                    equ $5E5B       ; 179;
+;Globals                $65DA-$678B     ; game/globals.asm, MODULE globals:
+;                       $65DA-$6672     ;   settings, name strings, get_name
+;                       $6673-$66C2     ;   monster_types, 10 x 8, static
+;                       $66C3-$66FF     ;   type_of / get_monster_type
+;                       $6700-$677F     ;   barbarian/dwarf/elf/wizard, 4 x 32
+;                       $6780-$678B     ;   get_hero
+;                       $678C-$7AFF     ; free, up to the stack
+;                                       ; the hero table is placed by ALIGN 256.
+;                                       ; The live monster pool is NOT here - it
+;                                       ; belongs to the level; see game/globals.i
 MainMenu                equ $6180       ; 00DE ; End 625E - was $5F91, which
                                         ; only had 127 bytes before mouse.asm
                                         ; at $6010. Free from here to Stack.

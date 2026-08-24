@@ -1,4 +1,4 @@
-        org $63F7
+        org $649A
     MODULE menus
 
 ;=============================================================================
@@ -44,60 +44,66 @@ print_menu_string:
 ;-----------------------------------------------------------------------------
 ; draw_items - print every node's text down the screen.
 ;-----------------------------------------------------------------------------
+; The node pointer lives here rather than in IY: the colour comes from the
+; node, but printing it goes through the ROM, and the ROM reaches its system
+; variables as (IY+n). Park a node in IY and RST $10 writes over the node.
+cur_node:           .dw 0
+cur_row:            .db 0       ; POS_Y, then a STEP further down per item
+
 draw_items:
                     ld ix, (ptr_menu)
                     ld a, (ix + MenuList.NODE_NUM)
                     ld b, a                     ; how many
-                    xor a                       ; set if to the first one
+                    ld c, 0                     ; which one
+                    ld a, (ix + MenuList.POS_Y)
+                    ld (cur_row), a             ; the first row
 .next:
                     push bc
-                    push af
+                    ld a, c
                     call get_node
+                    ld (cur_node), hl
                     inc hl                      ; skip ID, want TEXT_ID
                     ld a, (hl)
                     call get_string             ; HL = the text to print
-                    pop af
-                    push af
-;
-                    push af
+                    push hl                     ; hold it while a colour is picked
+;;;;
+                    ld hl, (cur_node)
+                    ld de, MenuNode.DEF_ATTR
+                    add hl, de
                     ld a, (ix + MenuList.ACTIVE)
-                    cp 0
-                    jr z, .default
-                    pop af
-                    push af
-                    ld b, a
+                    and a                       ; an inactive list has no
+                    jr z, .attribs              ; selection to highlight
                     ld a, (ix + MenuList.SELECTED_IDX)
-                    cp b
-                    jr nz, .default
-.selected:
-                    ld a, (ix + MenuList.SEL_ATTR)
-                    jr .attribs
-.default:           ld a, (ix + MenuList.DEF_ATTR)
+                    cp c
+                    jr nz, .attribs
+                    inc hl                      ; SEL_ATTR follows DEF_ATTR
 .attribs:
+                    ld a, (hl)
                     ld (PAPER_INK_BRIGHT1), a
-                    pop af
-;
-                    ld b, a
-                    ld a, (ix + MenuList.POS_Y)
-                    add b
+                    pop hl                      ; the text again
+;;;;
+                    ld a, (cur_row)
                     ld c, a                     ; row
                     ld a, (ix + MenuList.POS_X)
-                    ld b, a
+                    ld b, a                     ; column
                     call print_menu_string
-                    pop af
-                    inc a
+                    ld a, (cur_row)
+                    add a, (ix + MenuList.STEP) ; down to the next item
+                    ld (cur_row), a
                     pop bc
+                    inc c
                     djnz .next
                     ret
 
 init_menu:
                     ld (ptr_menu), hl
-                    ld ix, hl
                     push hl
+;
+                    push hl
+                    pop ix
 ;;;;
-                    ld b, 0
-                    ld c, MenuList.SEL_ATTR + 1
-                    add hl, bc
+                    ld bc, MenuList             ; the struct name is its size,
+                    add hl, bc                  ; so adding a field cannot rot this
 ;;;;
                     ld (ptr_nodes), hl
                     ld   a, (ix + MenuList.NODE_NUM)
@@ -106,6 +112,7 @@ init_menu:
                     ld   b, 0
                     add  hl, bc
                     ld   (ptr_strings), hl
+;
                     pop hl
 ;;;;
                     ret
@@ -154,25 +161,28 @@ keyboard_process:
         jp p, .reinit
         ld a, (ix + MenuList.NODE_NUM)
         dec a
-        jr .reinit
 .reinit:
         ld (ix + MenuList.SELECTED_IDX), a
         ld  hl, (ptr_menu)
         call init_menu
         call draw_items
-;
+        jr .skip
+;       
 .fire:
+        ld ix, (ptr_menu)
+        ld a, (ix + MenuList.SELECTED_IDX)
+        call get_node
+        push hl
+        pop ix
+        ld l, (ix + MenuNode.ACTION)
+        ld h, (ix + MenuNode.ACTION + 1)
+        call call_hl
+
 .skip:
         ret
 
-; is_active:              .db 0
-; selected_idx:           .db 0
-; node_num:               .db 0
-; string_num:             .db 0
-; pos_x:                  .db 0
-; pos_y:                  .db 0
-; def_attr:               .db 0
-; sel_attr:               .db 0
+call_hl:
+        jp (hl)
 
 ptr_menu:               .dw 0
 ptr_nodes:              .dw 0

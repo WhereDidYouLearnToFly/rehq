@@ -3,6 +3,8 @@ ID             BYTE $00
 TEXT_ID        BYTE $00
 ACTION         WORD $00
 BOX            WORD $00
+DEF_ATTR       BYTE $00
+SEL_ATTR       BYTE $00
    ENDS
 
    STRUCT MenuString
@@ -12,13 +14,12 @@ SIZE             BYTE $00
 
    STRUCT MenuList
 ACTIVE           BYTE $00
+STEP             BYTE $00
 SELECTED_IDX     BYTE $00
 NODE_NUM         BYTE $00
 STRING_NUM       BYTE $00
 POS_X            BYTE $00
 POS_Y            BYTE $00
-DEF_ATTR         BYTE $00
-SEL_ATTR         BYTE $00
    ;Nodes Pointers
    ;Strings Pointers
    ENDS
