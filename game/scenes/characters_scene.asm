@@ -1,6 +1,6 @@
     SLOT 3
     PAGE 0
-    org $C2CF
+    org $C2D2
     MODULE characters_menu
 
 MENU_BARBARIAN          equ 0

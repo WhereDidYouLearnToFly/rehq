@@ -35,7 +35,7 @@
 ; the text is taken.
 ;=============================================================================
 
-                    org $C852
+                    org $C855
                     MODULE saveload
 
 MAGIC               equ $5148               ; 'H','Q' in the order they land

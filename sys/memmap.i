@@ -34,7 +34,7 @@ Game                    equ $5E63       ; 179;
 ;                                       ; the hero table is placed by ALIGN 256.
 ;                                       ; The live monster pool is NOT here - it
 ;                                       ; belongs to the level; see game/globals.i
-Storage                 equ $C91C       ; core/storage/storage.asm - the seam
+Storage                 equ $C91F       ; core/storage/storage.asm - the seam
 StorageDevice           equ $6980       ; whichever ONE backend the build has,
                                         ; tape.asm or trdos.asm; they are never
                                         ; assembled together, so they share it
