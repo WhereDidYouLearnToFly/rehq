@@ -1,6 +1,6 @@
     SLOT 3
     PAGE 0
-    org $C09B
+    org $C09E
     MODULE main_menu
 
 MENU_PLAY               equ 0
@@ -45,6 +45,7 @@ main_list:              MenuList 1, 1, 0, 4, 4, ITEMS_COL, ITEMS_ROW
 ;=============================================================================
 
 play_action:
+                call audio.stop                 ; the quest starts its own
                 ;ld hl, game.set_game_play_scene
                 ;ld (next_scene), hl
                 ret
@@ -93,12 +94,18 @@ init:
 ;
                     call menus.draw_items
 ;
+                    ld a, audio.TUNE_MENU       ; already playing if we came
+                    call audio.play_tune        ; back from another menu
+;
                     ret
 
 deinit:
         ret
 
 loop:
+        call audio.frame                ; halt has just happened in
+                                        ; game.loop, so this is the 50Hz
+                                        ; the player wants
         ld hl, (next_scene)
         ld a, h
         or l                            ; only a null pointer is zero. Adding the

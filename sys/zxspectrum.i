@@ -13,7 +13,14 @@ SET_BORDER_TO_A             equ 8859        ;$229B           ;inside BORDER: OUT
 ROM_FONT                    equ 15616       ;$3D00            ;96 chars * 8 bytes
 DISPLAY_PIXELS              equ 16384       ;$4000
 DISPLAY_ATTRS               equ 22528       ;$5800
-BANK_SELECTOR               equ 23388       ;$5B5C            ;BANKM
+BANK_SELECTOR               equ 23388       ;$5B5C            ;BANKM - the ROM's copy of the
+                                            ;last value written to $7FFD, which is write-only. Every
+                                            ;pager must read-modify-write BOTH this and the port, and
+                                            ;it must be initialised before the first one does: a
+                                            ;snapshot starts it at zero whatever the real port holds,
+                                            ;and a read-modify-write from zero clears the ROM bit.
+                                            ;heroques.asm does that in appentry; SELECT_RAM_BANK
+                                            ;forces the ROM bit as well, belt and braces.
 LAST_KEY                    equ 23560       ;$5C08            ;LAST_K - ASCII code of the last keypress
 FONT_POINTER                equ 23606       ;$5C36            ;CHARS - 256 = 32 * 8 bytes, 32 is the code for first printable character
 SYS_BORDER                  equ 23624       ;$5C48            ;BORDCR

@@ -115,6 +115,9 @@ loop:
                 jp pscene_loop_call
 
 onInterrupt:
+                ld a, (audio.borrowed)          ; slot 3 is the music bank
+                and a                           ; for a few hundred T-states
+                ret nz                          ; and the scene is not in it
                 call pscene_interrupt_call
                 ret
 

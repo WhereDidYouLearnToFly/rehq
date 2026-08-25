@@ -22,6 +22,21 @@ appentry:
                     ld a, 0
                     out ($FE), a
                     call init_font
+;
+                    ; $7FFD is write-only, so the ROM keeps a copy of the last
+                    ; value written in BANK_SELECTOR and every pager has to read
+                    ; it, modify it and write it back. The snapshot starts the
+                    ; machine with the port at $10 - 48K ROM, bank 0 - but with
+                    ; that copy at zero, so the first read-modify-write would
+                    ; clear the ROM bit and page the 128K editor in underneath
+                    ; every RST $10 in the game. Tell the truth before anything
+                    ; pages anything.
+                    ld a, $10
+                    ld (BANK_SELECTOR), a
+;
+                    call music.stop             ; a snapshot starts with
+                                                ; whatever the AY held, and
+                                                ; init_im2 ends with ei
                     call interrupt.init_im2
                     call game.init
 
@@ -39,6 +54,16 @@ init_font:
     include "core/input/mouse.asm"
     include "core/math.asm"
     include "core/interrupt.asm"
+
+    ;Storage - the game calls storage.*, and exactly one backend answers.
+    ;Uncomment to build the TR-DOS version instead of the tape one.
+    ;DEFINE STORAGE_TRDOS
+    include "core/storage/storage.asm"      ; the seam: the filename and the
+    IFDEF STORAGE_TRDOS                     ; names the game calls
+    include "core/storage/trdos.asm"
+    ELSE
+    include "core/storage/tape.asm"
+    ENDIF
 
     ;UI
     include "game/menus/menus.asm"
@@ -59,6 +84,8 @@ init_font:
     ;Game
     include "game/game.asm"
     include "game/globals.asm"
+    include "game/audio.asm"
+    include "game/saveload.asm"
 
     ;Main Menu Scenes
     include "game/scenes/main_menu_scene.asm"
@@ -71,6 +98,7 @@ init_font:
 
     ;Data
     include "data/fonts.asm"
+    include "data/music_data.asm"
     include "core/zx0.asm"
     include "assets_generated.asm"
 

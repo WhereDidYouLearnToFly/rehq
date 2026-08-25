@@ -35,10 +35,26 @@ NAME_GARGOYLE       equ 11
 NAME_CHAOS_SORCERER equ 12
 NAME_DRAGON         equ 13
 
-STR_BARBARIAN:      MENU_STRING "SIGMAR"
-STR_DWARF:          MENU_STRING "GRUGNI"
-STR_ELF:            MENU_STRING "LADRIL"
-STR_WIZARD:         MENU_STRING "ZOLTAN"
+NAME_MAX            equ 6
+
+;-----------------------------------------------------------------------------
+; HERO_NAME - a MenuString the player can type over. Same layout as
+; MENU_STRING, so printing it is the same call, but the text is always padded
+; out to NAME_MAX bytes: the name field writes the full width of the flag
+; whatever is showing at the time, and a shorter literal would leave it
+; writing into the next name. Spare cells are spaces, so a half-typed name
+; still prints as a whole field.
+;-----------------------------------------------------------------------------
+    MACRO HERO_NAME text?
+                MenuString .end - .text
+.text:          db text?
+.end:           ds NAME_MAX - (.end - .text), ' '
+    ENDM
+
+STR_BARBARIAN:      HERO_NAME "SIGMAR"
+STR_DWARF:          HERO_NAME "GRUGNI"
+STR_ELF:            HERO_NAME "LADRIL"
+STR_WIZARD:         HERO_NAME "ZOLTAN"
 STR_GOBLIN:         MENU_STRING "GOBLIN"
 STR_ORC:            MENU_STRING "ORC"
 STR_FIMIR:          MENU_STRING "FIMIR"

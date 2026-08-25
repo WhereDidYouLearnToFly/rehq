@@ -1,6 +1,6 @@
     SLOT 3
     PAGE 0
-    org $C48B
+    org $C7C2
     MODULE shop_menu
 
 MENU_BUY                equ 0

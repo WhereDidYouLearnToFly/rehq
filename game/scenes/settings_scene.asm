@@ -1,6 +1,6 @@
     SLOT 3
     PAGE 0
-    org $C18C
+    org $C19A
     MODULE settings
 
 TEXT_SETTINGS:          MENU_STRING "SETTINGS"
@@ -86,6 +86,8 @@ deinit:
         ret
 
 loop:
+        call audio.frame        ; the tune carries in from the main menu
+                                ; and has to keep being advanced here
         ld a, (keys.up_digits)
         cp keys.KEY_1
         jr z, .one
@@ -99,6 +101,13 @@ loop:
                                 ; above, does nothing. Without this the fall
                                 ; through landed in REINIT CONTROLS.
 .one:
+        call audio.stop                 ; the player is about to be asked to
+                                        ; press something on a device they are
+                                        ; identifying by ear and eye; a tune
+                                        ; over the top of that is noise.
+                                        ; Nothing has to start it again -
+                                        ; main_menu.init plays `current`, which
+                                        ; audio.stop deliberately leaves set
         call input.reset
         jp game.set_input_select_scene
 .two:

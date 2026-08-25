@@ -168,19 +168,20 @@ from_bottom_to_top:
 load_attribs: ;bc - position, de-wxh, hl - pointer to attrb data
             ld (WORD_TEMP0), hl
             ld hl, DISPLAY_ATTRS
-            ld a, c
-            cp 0
-            jr z, load_attribs_vertical_loop
 ;;;
             push de
-            ld de, $20
+            ld de, $20              ; D=0, E=row stride
+            ld a, c
+            and a                   ; row 0 needs no multiply, but still
+            jr z, load_attribs_calc_xoff    ; needs the column offset
 ;
 load_attribs_calc_yloop:
             add hl, de
             dec c
             jr nz, load_attribs_calc_yloop
 ;
-            ld e, b
+load_attribs_calc_xoff:
+            ld e, b                 ; D is still 0
             add hl, de
             ex de, hl               ;de - pointer to screen area
             ld hl, (WORD_TEMP0)    ;hl - pointer to attrib data
@@ -190,7 +191,7 @@ load_attribs_calc_yloop:
             ld (BYTE_TEMP1), a
 ;
             ld a, $20
-            sub a, b
+            sub b
             ld (BYTE_TEMP0), a      ;delta to add
 ;
 load_attribs_vertical_loop:
@@ -217,17 +218,18 @@ load_attribs_dea: ld (de), a
 fill_rectangle:         ;bc - position, de - WidthxHeight, a - attrib
             ld (BYTE_TEMP0), a
             ld hl, DISPLAY_ATTRS
-            ld a, c
-            cp 0
-            jr z, fill_rectangle.vertical_loop
 ;;;
             push de
-            ld de, $20
+            ld de, $20              ; D=0, E=row stride
+            ld a, c
+            and a                   ; row 0 needs no multiply, but still
+            jr z, fill_rectangle.calc_xoff  ; needs the column offset
 fill_rectangle.calc_yloop:
             add hl, de
             dec c
             jr nz, fill_rectangle.calc_yloop
-            ld e, b
+fill_rectangle.calc_xoff:
+            ld e, b                 ; D is still 0
             add hl, de
             pop de
 ;;;
@@ -240,10 +242,10 @@ fill_rectangle.horizontal_loop:
             djnz fill_rectangle.horizontal_loop
             push de
             ld a, $20
-            sub a, d
+            sub d
             ld d, 0
             ld e, a
-            adc hl, de
+            add hl, de
             pop de
             dec e
             jr nz, fill_rectangle.vertical_loop

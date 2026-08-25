@@ -24,6 +24,9 @@ deinit:
 selected: .db 0
 
 loop:
+            call audio.frame    ; nothing is playing this early - the
+                                ; call is here so the one scene that can
+                                ; be returned to is not the odd one out
             call menu_ctrl
             ld a, (selected)
             and a
