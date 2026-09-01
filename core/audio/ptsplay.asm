@@ -30,7 +30,9 @@
 ; which this project does not use - the benches know what they embedded.
 ;=============================================================================
 
-        org PTSPlayer
+        SLOT 2
+        PAGE 2
+        org $845A
         MODULE PTS
         
 ;Universal PT2'n'PT3 Turbo Sound player for ZX Spectrum

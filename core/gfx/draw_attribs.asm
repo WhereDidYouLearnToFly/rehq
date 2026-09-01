@@ -1,4 +1,6 @@
-    org Attributes
+    SLOT 2
+    PAGE 2
+    org $8301
     MODULE attribs
 
 from_center_to_side:

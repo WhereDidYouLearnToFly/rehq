@@ -1,7 +1,7 @@
 ;=============================================================================
 ; game - the frame loop, and the scene it is currently running
 ;=============================================================================
-; Placement:  SLOT 1 / PAGE 5, org Game.
+; Placement:  SLOT 1 / PAGE 5 - MemPlan writes the org below.
 ; Depends on: the active scene's entry points, reached only through the
 ;             pscene_* pointers below - nothing here names a scene.
 ; Namespace:  MODULE game - init/loop/onInterrupt are reached as game.*
@@ -34,7 +34,7 @@
     SLOT 1
     PAGE 5
     ; zxide: size(130)
-    org Game
+    org $5E63
     MODULE game
 
 

@@ -1,6 +1,6 @@
     SLOT 3
     PAGE 0
-    org $C09E
+    org $C09B
     MODULE main_menu
 
 MENU_PLAY               equ 0

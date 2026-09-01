@@ -1,7 +1,7 @@
 ;=============================================================================
 ; Text on screen, by two completely different mechanisms
 ;=============================================================================
-; Placement:  org Text (sys/memmap.i). One file, two modules, because the two
+; Placement:  MemPlan places this one. One file, two modules, because the two
 ;             ways of getting a character on screen share nothing but a name.
 ;
 ;   MODULE direct_text - writes the screen directly. These poke display
@@ -31,7 +31,7 @@
 
                     SLOT 1
                     PAGE 5
-                    org Text
+                    org $5EE5
 
 ;=============================================================================
                     MODULE direct_text

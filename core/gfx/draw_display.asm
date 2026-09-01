@@ -1,4 +1,6 @@
-    org DrawDisplay
+    SLOT 2
+    PAGE 2
+    org $9017
     MODULE draw
 
 get_scaddr:

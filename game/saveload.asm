@@ -1,7 +1,7 @@
 ;=============================================================================
 ; save - what a saved character is, and putting one back
 ;=============================================================================
-; Placement:  org HeroSave.
+; Placement:  MemPlan places this one - the org below is the answer.
 ; Depends on: storage.save_block / storage.load_block, and globals for the
 ;             hero records. It never names a device.
 ; Namespace:  MODULE saveload - reached as saveload.*
@@ -35,7 +35,9 @@
 ; the text is taken.
 ;=============================================================================
 
-                    org $C855
+                    SLOT 3
+                    PAGE 0
+                    org $C8A6
                     MODULE saveload
 
 MAGIC               equ $5148               ; 'H','Q' in the order they land

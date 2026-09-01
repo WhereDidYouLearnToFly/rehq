@@ -21,7 +21,9 @@
 ; read sits pegged at full rather than empty. Nothing here misbehaves, there
 ; is simply no sound: run anything that uses this module on a 128K.
 ;=============================================================================
-                    org AY_OPS
+                    SLOT 2
+                    PAGE 2
+                    org $927B
                     MODULE ay
 
 SELECT_PORT         equ $fffd           ; register select (write) / read back

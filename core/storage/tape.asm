@@ -1,7 +1,8 @@
 ;=============================================================================
 ; tape - the storage backend that talks to a cassette recorder
 ;=============================================================================
-; Placement:  org StorageDevice - the address the one fitted backend gets.
+; Placement:  MemPlan places this one - the org below is the answer. It is
+;             the address the one fitted backend gets.
 ; Depends on: storage.asm, for the filename, and the 48K ROM.
 ; Namespace:  MODULE tape - reached as tape.*, but the game should be calling
 ;             storage.save_block / storage.load_block, which are these.
@@ -93,7 +94,9 @@
 ; not in storage.asm.
 ;=============================================================================
 
-                    org $C706
+                    SLOT 3
+                    PAGE 0
+                    org $C746
                     MODULE tape
 
 SA_BYTES            equ $04C2

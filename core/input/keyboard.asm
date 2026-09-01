@@ -17,6 +17,8 @@
 ; into the accumulator - and because pressed is 0, AND is what accumulates.
 ;=============================================================================
 
+                    SLOT 1
+                    PAGE 5
                     org $6448
                     MODULE keyboard
 

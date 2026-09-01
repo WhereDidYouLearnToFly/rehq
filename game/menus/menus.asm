@@ -1,3 +1,5 @@
+        SLOT 1
+        PAGE 5
         org $649A
     MODULE menus
 

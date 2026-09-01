@@ -1,6 +1,5 @@
 ;System
     include "sys/zxspectrum.i"
-    include "sys/memmap.i"
     include "sys/system.asm"
     include "sys/stack.asm"
 ;Macroses
@@ -13,9 +12,13 @@
 
     device zxspectrum128
     ; zxide: pin
+    SLOT 1
+    PAGE 5
     org $4000
     INCBIN "bin/ui/screen.scr"
-    org AppStart                            ; Start of application
+    SLOT 1
+    PAGE 5
+    org $5E44                            ; Start of application
 
 appentry:
                     ld sp, $8000
@@ -84,7 +87,10 @@ init_font:
     ;Game
     include "game/game.asm"
     include "game/globals.asm"
+    include "game/items.asm"
+    include "game/spells.asm"
     include "game/audio.asm"
+    include "game/card_text.asm"
     include "game/saveload.asm"
 
     ;Main Menu Scenes
@@ -99,8 +105,16 @@ init_font:
     ;Data
     include "data/fonts.asm"
     include "data/music_data.asm"
+    include "data/card_data.asm"
     include "core/zx0.asm"
     include "assets_generated.asm"
+
+    ; savesna records whichever page is mapped into slot 3 when it runs, and the last
+    ; module above set PAGE 4 for the card text - which booted the machine with the
+    ; descriptions at $C000 and the scenes nowhere, so game.init jumped into card text.
+    ; Nothing is emitted after this; it only says what the snapshot starts with.
+    SLOT 3
+    PAGE 0
 
     savesna "heroques.sna", appentry
 

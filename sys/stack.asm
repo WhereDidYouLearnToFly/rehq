@@ -37,6 +37,8 @@
 ;=============================================================================
 
 ; zxide: pin, size(1280) stack, grows down from $7FFF to the end of slot 1
-                    org Stack
+                    SLOT 1
+                    PAGE 5
+                    org $7B00
                     MODULE stack
                     ENDMODULE

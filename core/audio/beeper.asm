@@ -1,6 +1,6 @@
     SLOT 2
     PAGE 2
-        org Beeper
+        org $9234
         MODULE beeper
 
 enable:

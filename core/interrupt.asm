@@ -12,6 +12,8 @@
 ; interrupt.*; im2routine/im2table sit outside the module, pinned globals.
 ;=============================================================================
                     ; zxide: pin
+                    SLOT 2
+                    PAGE 2
                     org $8162
                     MODULE interrupt
 
@@ -54,6 +56,8 @@ init_im1:
 ; ahead of this module would silently overwrite the handler.
 ; zxide: pin its address is the fill byte in init_im2 doubled ($81 -> $8181)
                     ASSERT $ <= $8181
+                    SLOT 2
+                    PAGE 2
                     org $8181
 im2routine:
                     push          iy          ; pushed first so it comes off
@@ -95,5 +99,7 @@ on_tick:
 ; Make sure this is on a 256 byte boundary
                     ; zxide: pin
                     ASSERT $ <= $8200
+                    SLOT 2
+                    PAGE 2
                     org           $8200
 im2table:           defs          257

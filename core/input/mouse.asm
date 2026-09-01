@@ -39,6 +39,8 @@
 ; negates the y delta so mouse.y is already in screen space and callers never
 ; have to think about it.
 ;=============================================================================
+                    SLOT 1
+                    PAGE 5
                     org $632D
                     MODULE mouse
 

@@ -43,7 +43,7 @@
 ;  3. This notice may not be removed or altered from any source distribution.
         SLOT 2
         PAGE 2
-        org DecompressorZX0
+        org $8000
         MODULE ZX0
 DecompressZX0:
         scf 

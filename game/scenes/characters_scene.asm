@@ -1,6 +1,6 @@
     SLOT 3
     PAGE 0
-    org $C2D2
+    org $C2CF
     MODULE characters_menu
 
 MENU_BARBARIAN          equ 0
@@ -206,6 +206,10 @@ get_and_show_hero:
         inc b
         jp menus.print_menu_string
 .dead:
+        ld a, 0
+        ld bc, (hero_pos)
+        ld de, $0801
+        call attribs.fill_rectangle
         ld bc, (hero_pos)
         inc b
         jp show_dead_hero
@@ -664,9 +668,59 @@ menu_input:
         ld a, (mouse.in_use)
         cp 0
         jr nz, .mouse
+        call dead_alive_switch
         call menus.keyboard_process
 .mouse:
         ret
+
+;-----------------------------------------------------------------------------
+; dead_alive_switch - LEFT or RIGHT turns the selected hero dead or alive.
+;
+; Only while the char list itself is listening: with the sub-menu open the
+; highlight on screen belongs to that, and END - the fifth entry - has no hero
+; behind it. Both facts are already written down, in MenuList.ACTIVE and
+; SELECTED_IDX, so nothing here keeps a second copy of them.
+;
+; The selection is the hero slot, the same way tape_args reads it, so getting
+; the record is one call and the redraw is one table lookup. UP, DOWN and FIRE
+; are left alone - keyboard_process reads the same edge mask straight after.
+;-----------------------------------------------------------------------------
+dead_alive_switch:
+        ld a, (char_list + MenuList.ACTIVE)
+        and a
+        ret z
+;
+        ld a, (input.up_buttons)
+        and input.LEFT | input.RIGHT
+        ret z                           ; either one flips it, so which is
+                                        ; which is not worth asking
+;
+        ld a, (char_list + MenuList.SELECTED_IDX)
+        cp globals.HERO_COUNT           ; END is past the last hero
+        ret nc
+        ld c, a                         ; the slot, wanted again to redraw
+        call globals.get_hero           ; a = slot -> ix = that Hero
+;
+        ld a, (ix + Hero.FLAGS)
+        xor CH_ALIVE
+        ld (ix + Hero.FLAGS), a
+.show:
+        ld a, c                         ; the one that draws this slot: it
+        add a, a                        ; fills hero_ptr and the three beside
+        ld hl, HERO_SHOW                ; it, exactly as picking the hero would
+        add a, l
+        ld l, a
+        adc a, h
+        sub l
+        ld h, a
+        ld a, (hl)
+        inc hl
+        ld h, (hl)
+        ld l, a
+        jp (hl)
+
+HERO_SHOW:      dw get_and_show_barbarian_name, get_and_show_dwarf_name
+                dw get_and_show_elf_name,       get_and_show_wizard_name
 
 input_handler: .dw menu_input
 

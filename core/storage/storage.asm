@@ -1,7 +1,7 @@
 ;=============================================================================
 ; storage - saving and loading, whatever the machine happens to have
 ;=============================================================================
-; Placement:  org Storage. The backend gets its own, org StorageDevice.
+; Placement:  MemPlan places this one - the org below is the answer.
 ; Depends on: nothing. The backend depends on this one, not the other way
 ;             round - which is why this file has no idea what a tape is.
 ; Namespace:  MODULE storage - every label below is reached as storage.*
@@ -52,7 +52,7 @@
 
                     SLOT 3
                     PAGE 0
-                    org Storage
+                    org $C895
                     MODULE storage
 
 FILENAME_LEN        equ 8

@@ -24,9 +24,6 @@ deinit:
 selected: .db 0
 
 loop:
-            call audio.frame    ; nothing is playing this early - the
-                                ; call is here so the one scene that can
-                                ; be returned to is not the odd one out
             call menu_ctrl
             ld a, (selected)
             and a
@@ -36,7 +33,6 @@ loop:
 
 interrupt:
             call input.check_input
-            ;call ay.play_timed
             ;update counters
             ld hl, counters
             inc (hl)

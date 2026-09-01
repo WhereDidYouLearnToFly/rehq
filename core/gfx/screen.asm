@@ -1,4 +1,6 @@
-    org Screen
+    SLOT 2
+    PAGE 2
+    org $92A9
     MODULE screen
 
 get_pix_addr_by_bc:                                 ;bc is char x,y

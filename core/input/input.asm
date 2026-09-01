@@ -37,6 +37,8 @@
 ; once they pick. input.wait_control blocks until then.
 ;=============================================================================
 
+                    SLOT 1
+                    PAGE 5
                     org $63D0
                     MODULE input
 

@@ -1,6 +1,6 @@
     SLOT 3
     PAGE 0
-    org $C19A
+    org $C197
     MODULE settings
 
 TEXT_SETTINGS:          MENU_STRING "SETTINGS"

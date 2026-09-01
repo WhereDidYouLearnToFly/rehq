@@ -29,6 +29,8 @@
 ; state, so a 3 pressed during name entry does not vanish from get_digit.
 ;=============================================================================
 
+                    SLOT 1
+                    PAGE 5
                     org $6597
                     MODULE keys
 

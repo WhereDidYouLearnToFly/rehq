@@ -1,6 +1,6 @@
         SLOT 2
         PAGE 2
-        org Math
+        org $80BF
         MODULE math
 imul:
         ld e,d          ; HL = H * D
