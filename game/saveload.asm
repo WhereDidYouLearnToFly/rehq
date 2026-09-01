@@ -37,7 +37,7 @@
 
                     SLOT 3
                     PAGE 0
-                    org $C8A6
+                    org $C89D
                     MODULE saveload
 
 MAGIC               equ $5148               ; 'H','Q' in the order they land

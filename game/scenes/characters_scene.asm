@@ -1,6 +1,6 @@
     SLOT 3
     PAGE 0
-    org $C2CF
+    org $C2C9
     MODULE characters_menu
 
 MENU_BARBARIAN          equ 0
@@ -639,10 +639,6 @@ deinit:
         ret
 
 loop:
-        call audio.frame        ; before run_pending: a tape job blocks
-                                ; for seconds, and the frame it would
-                                ; have skipped is the one that stops the
-                                ; music cleanly
         call run_pending                ; whatever the menu asked for that was
                                         ; too slow to do in the interrupt
         ld hl, (next_scene)

@@ -96,7 +96,7 @@
 
                     SLOT 3
                     PAGE 0
-                    org $C746
+                    org $C73D
                     MODULE tape
 
 SA_BYTES            equ $04C2

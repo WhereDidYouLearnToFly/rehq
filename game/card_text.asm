@@ -40,7 +40,7 @@
 
                     SLOT 1
                     PAGE 5
-                    org $6C37
+                    org $6C3B
                     MODULE card_text
 
 TEXT_BANK           equ 4

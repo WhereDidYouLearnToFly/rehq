@@ -118,6 +118,18 @@ onInterrupt:
                 ld a, (audio.borrowed)          ; slot 3 is the music bank
                 and a                           ; for a few hundred T-states
                 ret nz                          ; and the scene is not in it
+;
+                call audio.tick                 ; the player, before anything in
+                                                ; slot 3 runs: tick borrows the
+                                                ; music bank and gives it back,
+                                                ; and the scene's handler lives
+                                                ; in the bank it borrows over.
+                                                ; Here rather than in each
+                                                ; scene's loop so the tune keeps
+                                                ; its phase while a new scene
+                                                ; spends four frames drawing
+                                                ; itself, and so the borrow
+                                                ; cannot swallow an interrupt
                 call pscene_interrupt_call
                 ret
 

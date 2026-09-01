@@ -1,6 +1,6 @@
     SLOT 3
     PAGE 0
-    org $C805
+    org $C7FC
     MODULE shop_menu
 
 MENU_BUY                equ 0
@@ -75,9 +75,6 @@ deinit:
         ret
 
 loop:
-        call audio.frame                ; halt has just happened in
-                                        ; game.loop, so this is the 50Hz
-                                        ; the player wants
         ld hl, (next_scene)
         ld a, h
         or l

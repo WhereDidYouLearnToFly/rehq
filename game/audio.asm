@@ -177,17 +177,37 @@ stop:
 ; there is no moment where interrupts are on with the music bank paged in.
 ;-----------------------------------------------------------------------------
 frame:
+                    di                      ; for a caller with interrupts on.
+                    call tick               ; game.onInterrupt calls tick
+                    ei                      ; directly - see the note there
+                    ret
+
+;-----------------------------------------------------------------------------
+; tick - advance the player one frame. Interrupts must ALREADY be off.
+;
+; This is the whole of the work; `frame` is the same thing with a di/ei round
+; it. Split because the borrow window is the wrong place to be holding the
+; interrupt off from the foreground: `/INT` is asserted for a few dozen
+; T-states and no longer, so an interrupt that arrives while the player is
+; running is not deferred, it is lost - and a lost interrupt costs the frame
+; twice over, once for the scene's handler that never runs and once for the
+; `halt` in game.loop that waits for the next one.
+;
+; Called from the interrupt handler, none of that can happen: interrupts are
+; already off, the phase is the same in every scene whatever the foreground is
+; doing, and a scene switch no longer leaves the tune untouched for as long as
+; the new scene's init takes to draw itself.
+;-----------------------------------------------------------------------------
+tick:
                     ld a, (music.playing)
                     and a
                     ret z
 ;
-                    di
                     call bank_in
                     call music.frame_raw
                     call bank_out
                     ld iy, music.SYSVARS    ; frame_raw leaves it wherever the
-                    ei                      ; block left it
-                    ret
+                    ret                     ; block left it
 
 ;-----------------------------------------------------------------------------
 ; bank_in / bank_out - borrow slot 3 and give it back.

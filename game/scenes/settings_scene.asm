@@ -1,6 +1,6 @@
     SLOT 3
     PAGE 0
-    org $C197
+    org $C194
     MODULE settings
 
 TEXT_SETTINGS:          MENU_STRING "SETTINGS"
@@ -86,8 +86,6 @@ deinit:
         ret
 
 loop:
-        call audio.frame        ; the tune carries in from the main menu
-                                ; and has to keep being advanced here
         ld a, (keys.up_digits)
         cp keys.KEY_1
         jr z, .one
