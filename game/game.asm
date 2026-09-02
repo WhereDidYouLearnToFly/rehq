@@ -34,7 +34,7 @@
     SLOT 1
     PAGE 5
     ; zxide: size(130)
-    org $5E63
+    org $5EC6
     MODULE game
 
 
@@ -111,7 +111,20 @@ init:
                 call pscene_init_call
 
 loop:
-                halt
+                halt                            ; wait for the frame interrupt,
+                                                ; which is where audio.tick and
+                                                ; the scene's handler just ran
+;
+                call menus.tick                 ; ...and here, on the other side
+                                                ; of it, is where drawing goes.
+                                                ; A menu's cursor keys are
+                                                ; handled in the interrupt but
+                                                ; must not draw there: see the
+                                                ; note above menus.pending.
+                                                ; Called for every scene, since
+                                                ; every scene that has a menu
+                                                ; wants it and one without a
+                                                ; menu pays a load and a test.
                 jp pscene_loop_call
 
 onInterrupt:

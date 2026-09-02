@@ -32,7 +32,7 @@
 
         SLOT 2
         PAGE 2
-        org $845A
+        org $8429
         MODULE PTS
         
 ;Universal PT2'n'PT3 Turbo Sound player for ZX Spectrum

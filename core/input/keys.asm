@@ -31,7 +31,7 @@
 
                     SLOT 1
                     PAGE 5
-                    org $6597
+                    org $65AB
                     MODULE keys
 
 ; Keyboard half-rows, as written to the high byte of port $FE. Declared here

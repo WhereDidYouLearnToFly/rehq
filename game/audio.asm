@@ -77,7 +77,7 @@
 
                     SLOT 1
                     PAGE 5
-                    org $6BA1           ; was $688C, then $6D00. The card and
+                    org $6B93           ; was $688C, then $6D00. The card and
                                         ; spell tables in globals grew over
                                         ; both; globals now ends at $6E8B.
                                         ; Free from here to the stack at $7B00.

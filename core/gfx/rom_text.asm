@@ -123,6 +123,82 @@ print_teletype:
                     pop hl
                     jr print_teletype
 
+;-----------------------------------------------------------------------------
+; print_number_padded - HL = value (0-65535), B = column of the LAST digit,
+; C = row, D = width in digits (1-5), E = the character to pad with.
+;
+; Right-aligned and fixed width, which print_number above is not: a price
+; falling from 100 to 99 leaves the ROM's variable-width print showing "990".
+; Pass ' ' to blank the leading zeros, or '0' to show them - a cost column
+; wants the first, a gold readout the second.
+;
+; The value must fit the width; 1000 in a 3-wide field prints its low digits.
+;-----------------------------------------------------------------------------
+print_number_padded:
+                    ld (num_value), hl
+                    ld a, e
+                    ld (num_pad), a
+                    ld a, 1
+                    ld (num_leading), a         ; still in the run of zeros
+                    ld a, b                     ; B names the last digit, so
+                    sub d                       ; step back to the first and
+                    inc a                       ; let the ROM cursor walk
+                    ld b, a
+                    push de
+                    call set_cursor
+                    pop de
+                    ld a, 5                     ; the widest field is 5 digits,
+                    sub d                       ; so a narrower one starts
+                    add a, a                    ; further down the table
+                    ld l, a
+                    ld h, 0
+                    ld bc, .powers
+                    add hl, bc
+                    ld b, d                     ; digits still to print
+.digit:
+                    ld e, (hl)                  ; de = this power of ten
+                    inc hl
+                    ld d, (hl)
+                    inc hl
+                    push hl                     ; the table cursor
+                    ld hl, (num_value)
+                    ld c, '0'-1
+.subtract:
+                    inc c                       ; how many times it goes in
+                    or a
+                    sbc hl, de
+                    jr nc, .subtract
+                    add hl, de                  ; one subtraction too far
+                    ld (num_value), hl          ; the remainder feeds the next
+                    ld a, c
+                    cp '0'
+                    jr nz, .ink                 ; a real digit ends the run
+                    ld a, b
+                    dec a
+                    jr z, .ink                  ; the units digit always prints
+                    ld a, (num_leading)
+                    and a
+                    jr z, .ink
+                    ld a, (num_pad)
+                    jr .put
+.ink:
+                    xor a
+                    ld (num_leading), a
+                    ld a, c
+.put:
+                    push bc
+                    rst $10                     ; RST $10 is free with its
+                    pop bc                      ; registers, so nothing of
+                    pop hl                      ; ours is left in one
+                    djnz .digit
+                    ret
+
+.powers:            dw 10000, 1000, 100, 10, 1
+
+num_value:          dw 0                        ; what is left to print
+num_pad:            db 0
+num_leading:        db 0                        ; 1 while still in leading zeros
+
 ; The block cursor: PAPER (17) green (4), a space to paint the cell, then
 ; backspace (8) to step back over it so the next character lands there.
 CURSOR_BLOCK:       db 17, 4, ' ', 8

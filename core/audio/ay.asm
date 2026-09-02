@@ -23,7 +23,7 @@
 ;=============================================================================
                     SLOT 2
                     PAGE 2
-                    org $927B
+                    org $91F4
                     MODULE ay
 
 SELECT_PORT         equ $fffd           ; register select (write) / read back

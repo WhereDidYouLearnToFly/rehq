@@ -165,10 +165,10 @@ keyboard_process:
         dec a
 .reinit:
         ld (ix + MenuList.SELECTED_IDX), a
-        ld  hl, (ptr_menu)
-        call init_menu
-        call draw_items
-        jr .skip
+        ld hl, draw_items       ; asked for, not done - see tick below. The
+        ld (pending), hl        ; call to init_menu that used to be here was
+        jr .skip                ; recomputing ptr_nodes and ptr_strings from a
+                                ; ptr_menu that moving the cursor cannot change
 ;       
 .fire:
         ld ix, (ptr_menu)
@@ -184,6 +184,58 @@ keyboard_process:
         ret
 
 call_hl:
+        jp (hl)
+
+;=============================================================================
+; Why the cursor keys do not draw anything
+;=============================================================================
+; keyboard_process runs inside the frame interrupt: game.onInterrupt calls
+; audio.tick and then the scene's handler, fifty times a second. Whatever that
+; handler does has to fit in the frame it is running in. If it does not, the
+; next interrupt arrives while it is still going and is lost - and a lost
+; interrupt is a missed audio.tick, which is audible as the music dragging.
+;
+; Repainting this menu is five short entries, about forty ROM character calls,
+; and it fits. The shop menu is fourteen entries with prices, about two hundred
+; and thirty, and it did not - which is how the problem was found. The size is
+; the difference; the mistake is the same one, so both are fixed the same way.
+;
+; So the handler records what wants doing and returns. The scene's loop is
+; ordinary code running between frames, with a whole frame to spend, and that
+; is where the drawing happens. game.loop calls tick for exactly that reason.
+; It is the same trick characters_scene uses to keep tape loading out of the
+; interrupt, and next_scene is the same idea again for leaving a scene.
+;=============================================================================
+
+pending:                .dw 0   ; a redraw for tick, or 0
+
+;-----------------------------------------------------------------------------
+; request_redraw - ask for a repaint without doing one. For callers that are
+; themselves inside the interrupt, such as a scene handing the keys from one
+; menu to another: the highlight moves between two menus, so both want
+; redrawing, and neither may be redrawn from there.
+;-----------------------------------------------------------------------------
+request_redraw:
+        ld hl, draw_items
+        ld (pending), hl
+        ret
+
+;-----------------------------------------------------------------------------
+; tick - called once a frame from game.loop, never from an interrupt.
+;
+; pending is cleared before the job runs, so a job may ask for another. There
+; is no guard against the interrupt setting it again in that gap, because it
+; does not matter here: draw_items reads SELECTED_IDX when it runs, so a
+; keypress landing mid-draw is either already drawn or draws next frame.
+; item_menu.tick does need that guard - the note there says why.
+;-----------------------------------------------------------------------------
+tick:
+        ld hl, (pending)
+        ld a, h
+        or l
+        ret z
+        ld de, 0
+        ld (pending), de
         jp (hl)
 
 ptr_menu:               .dw 0

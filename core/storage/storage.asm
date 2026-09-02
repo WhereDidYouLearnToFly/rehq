@@ -52,7 +52,7 @@
 
                     SLOT 3
                     PAGE 0
-                    org $C88C
+                    org $C99A
                     MODULE storage
 
 FILENAME_LEN        equ 8

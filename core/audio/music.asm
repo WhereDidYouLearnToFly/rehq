@@ -49,7 +49,7 @@
 ;=============================================================================
                     SLOT 2
                     PAGE 2
-                    org $918A
+                    org $9103
                     MODULE music
 
 SYSVARS             equ $5c3a           ; what the ROM ISR expects in IY

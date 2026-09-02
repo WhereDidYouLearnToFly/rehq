@@ -1,25 +1,11 @@
-    MACRO DRAW_PANEL8x8 xy, wh, img
-            ld hl, xy
-            ld a, h
-            rla
-            rla
-            rla
-            ld (display.panel_xpix), a
-            ld a, l
-            rla
-            rla
-            rla
-            ld (display.panel_ypix), a
-            ld hl, wh
-            ld a, h
-            dec a
-            ld (display.panel_wchar), a
-            ld a, l
-            dec a
-            ld (display.panel_hchar), a
-            ld hl, img
-            call display.draw8x8_panel
-    ENDM
+;=============================================================================
+; Call-site sugar for the gfx modules
+;=============================================================================
+; A macro belongs here only when a routine cannot state its arguments in
+; registers. draw8x8_panel used to need one - it read its coordinates out of
+; memory - and that indirection is exactly how it drifted out of step with its
+; own call site. It takes BC/DE/HL now, so it needs no macro.
+;-----------------------------------------------------------------------------
 
     MACRO FILL_ATTRIB_RECT xy, wh, attrib
         ld bc, xy

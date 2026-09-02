@@ -9,11 +9,11 @@
 ;             and spells.bit turns an id into its bit in Hero.SPELLS.
 ;=============================================================================
 
-    SLOT 3
-    PAGE 4
+    SLOT 1
+    PAGE 5
     ; zxide: size(384) read by scenes in slot 3, so it cannot live in a bank -
     ;             the reader would be paged out along with the page it asked from
-    org $E5E3
+    org $7004
     MODULE spells
 
 ;-----------------------------------------------------------------------------

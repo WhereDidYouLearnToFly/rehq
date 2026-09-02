@@ -1,8 +1,7 @@
 
-    ; zxide: size(1280)
     SLOT 1
     PAGE 5
-    org $66A1
+    org $66B5
     MODULE globals
 
 MUSIC_BIT       equ 5
@@ -134,6 +133,12 @@ names:              dw STR_BARBARIAN, STR_DWARF, STR_ELF, STR_WIZARD
 names_end:
 
 NAME_COUNT          equ (names_end - names) / 2
+;-----------------------------------------------------------------------------
+; GLOBAL UI
+;-----------------------------------------------------------------------------
+
+hq_frame:
+    INCBIN "../bin/ui/gfx/hq_frame.bin"
 
 ;-----------------------------------------------------------------------------
 ; get_name - A = a NAME_ constant, returns HL = that MenuString, ready for

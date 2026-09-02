@@ -18,7 +18,7 @@
     INCBIN "bin/ui/screen.scr"
     SLOT 1
     PAGE 5
-    org $5E44                            ; Start of application
+    org $5EA7                            ; Start of application
 
 appentry:
                     ld sp, $8000
@@ -70,6 +70,7 @@ init_font:
 
     ;UI
     include "game/menus/menus.asm"
+    include "game/menus/item_menu.asm"
 
     ;SFX
     include "core/audio/beeper.asm"

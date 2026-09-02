@@ -3,6 +3,12 @@
 ;=============================================================================
 ; Placement:  MemPlan places this one, in page 5 - the table is read by the
 ;             shop, the character sheet and combat, none of which can page.
+;             It sat in PAGE 4 at slot 3 until the shop first read it, which
+;             is the one arrangement that cannot work: every scene is PAGE 0
+;             at that same slot, so paging this in would page the caller out.
+;             Nothing had called get_card yet, so nothing had noticed.
+;             game/spells.asm still has the same pair of directives and the
+;             same problem waiting.
 ; Depends on: globals for the STR_ names, data/card_data.asm for the rules
 ;             text, and game/globals.i for the Card record itself.
 ; Namespace:  MODULE items - the table is items.cards, the lookup items.get.
@@ -11,11 +17,11 @@
 ; shoving anything else up the page.
 ;=============================================================================
 
-    SLOT 3
-    PAGE 4
+    SLOT 1
+    PAGE 5
     ; zxide: size(576) read by scenes in slot 3, so it cannot live in a bank -
     ;             the reader would be paged out along with the page it asked from
-    org $E3A3
+    org $6DC4
     MODULE items
 
 ;-----------------------------------------------------------------------------

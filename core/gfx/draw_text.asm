@@ -24,14 +24,16 @@
 ; would need a shift and a two-byte write, and neither of these does that.
 ; Nothing here takes a pixel coordinate.
 ;
-; Depends on: screen.get_pix_addr_by_bc (itself a ROM call), beeper.click_beep,
-;             and FONT_POINTER, which init_font sets to `fonts.font - 256` so
-;             that character code 32 is the first glyph actually stored.
+; Depends on: screen.cell_address and screen.get_pix_addr_by_bc for every
+;             address - this module used to carry its own copy of that sum -
+;             beeper.click_beep, and FONT_POINTER, which init_font sets to
+;             `fonts.font - 256` so that character code 32 is the first glyph
+;             actually stored.
 ;=============================================================================
 
                     SLOT 1
                     PAGE 5
-                    org $5EE5
+                    org $5F48
 
 ;=============================================================================
                     MODULE direct_text
@@ -112,7 +114,7 @@ draw_char:
                     add hl, hl
                     ld bc, (FONT_POINTER)       ; stored base-256, so code 32
                     add hl, bc                  ; is the first glyph in the font
-                    call cell_address           ; screen address into DE
+                    call screen.cell_address    ; screen address into DE
                     ld a, (invert_mask)
                     ld c, a                     ; held in a register: this is
                     ld b, 8                     ; the inner loop of every menu
@@ -136,38 +138,14 @@ draw_char:
 invert_mask:        db 0
 
 ;-----------------------------------------------------------------------------
-; cell_address - D = row (0-23), E = column (0-31). Returns the screen address
-; of that cell's top pixel row in DE.
-;
-; The Spectrum's layout, low byte first: E = (row & 7) * 32 + column, and the
-; four `rra` are that multiply by 32 - `and 7` leaves the carry clear, so
-; rotating right four times through a 9-bit path brings the three bits back up
-; into the top three, which is a rotate left by five. D = $40 + (row & 24)
-; picks the third: $40, $48, $50.
-;-----------------------------------------------------------------------------
-cell_address:
-                    ld a, d
-                    and %00000111
-                    rra
-                    rra
-                    rra
-                    rra
-                    or e
-                    ld e, a
-                    ld a, d
-                    and %00011000
-                    or %01000000
-                    ld d, a
-                    ret
-
-;-----------------------------------------------------------------------------
 ; The two effects work on a "strip": eight pixel rows of one character row,
 ; `width` bytes across, starting at a character cell. Both need the caller to
 ; keep column + width within 32 - a strip that runs off the right edge
 ; continues into the next pixel row of the same cell, because that is what the
 ; next address is. They live in this module because they rewrite the bitmap
-; directly, but note that both reach the screen through
-; screen.get_pix_addr_by_bc, which is itself a ROM call.
+; directly. Both reach the screen through screen.get_pix_addr_by_bc, which
+; used to be a ROM call answering for row 24-row; neither of these has ever
+; been called, so they have never been seen drawing in the right place.
 ;-----------------------------------------------------------------------------
 
 ;-----------------------------------------------------------------------------
