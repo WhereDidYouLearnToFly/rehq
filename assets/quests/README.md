@@ -16,7 +16,7 @@ generated, which is why `sprites_hand/` exists next to it.
 |---|---|---|
 | `quests.hipnc` | the scene: `/obj/quest_01 … quest_10` | `build_quests_hou.py`, rebuilt from scratch |
 | `build_quests_hou.py` | how a quest becomes nodes | by hand |
-| `quest_editor.py` | the Quest Editor (shelf → **Quest Editor**) | by hand |
+| `quest_editor/` | the Quest Editor (shelf → **Quest Editor**) — a package, one class per file | by hand |
 | `quests_data.json` | the ten quests, final | `09_assemble.py` |
 | `sprites/` | one PNG per symbol, plus `index.json` | **generated** — `11_sprites.py` owns it |
 | `sprites_hand/` | your own drawings | **by hand**, never overwritten |
@@ -35,8 +35,28 @@ scans: **everything it writes is in this folder.** Outside it, it reads
 `ds/cNN.png` for the picture behind the map, and runs two pipeline scripts —
 `09_assemble.py` on Apply and `11_sprites.py` on Sprite…
 
-`quest_editor.py` names all of these once, in a block at the top, and nowhere
-else — if a path moves, that block is the only place that has to know.
+`quest_editor/paths.py` names all of these once and nowhere else — if a path
+moves, that file is the only place that has to know.
+
+## The editor's own files
+
+One class per file, and the pieces a class needs beside it:
+
+| file | holds |
+|---|---|
+| `paths.py` | every location the tool reads or writes, and the board size |
+| `catalog.py` | `Catalog` — the items, the layers, and the `CAT` singleton |
+| `manualfile.py` | reading and writing `manual.json` in its own style |
+| `sprites.py` | what the sprite library offers, and your own drawings |
+| `model.py` | `Model` — the parse with the hand file merged over it |
+| `board.py` | `Board` — the map, the painting, and where a click landed |
+| `items.py` | `ItemsDialog` — the catalogue as a table |
+| `panel.py` | `Editor` — the controls, and what each button does |
+| `pipeline.py` | running a pipeline step with what it printed captured |
+
+It is a package, so `importlib.reload()` on it reloads only `__init__.py`.
+`show()` reloads the parts itself, deepest first — which is what makes editing
+one of them show up on the next press of the shelf button.
 
 ## The catalogue
 

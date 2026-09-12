@@ -11,11 +11,15 @@
 # assets/quests/ beside build_quests_hou.py - which is $HIP whenever
 # quests.hipnc is the open scene, and the tool needs that scene open
 # anyway: it rebuilds /obj/quest_01..10 and reads $HIP/sprites.
+#
+# It is a PACKAGE, not a module, so reloading it here reloads only its
+# __init__ - show() reloads the parts inside it, which is what makes editing
+# one of them show up on the next press of this button.
 import os, sys, importlib
 import hou
 
 d = hou.text.expandString('$HIP')
-if not os.path.exists(os.path.join(d, 'quest_editor.py')):
+if not os.path.exists(os.path.join(d, 'quest_editor')):
     raise hou.Error('Open assets/quests/quests.hipnc first - the Quest '
                     'Editor loads from $HIP and edits that scene.')
 if d not in sys.path:
