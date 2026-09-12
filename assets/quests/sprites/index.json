@@ -1,0 +1,235 @@
+{
+ "_note": "cut by map-ai-parsing/work/11_sprites.py from the canonical rasters; w/h are the sprite's footprint in board squares",
+ "sprites": {
+  "arrow": {
+   "N": {
+    "file": "arrow/N.png",
+    "h": 1,
+    "w": 1
+   },
+   "S": {
+    "file": "arrow/S.png",
+    "h": 1,
+    "w": 1
+   },
+   "W": {
+    "file": "arrow/W.png",
+    "h": 1,
+    "w": 1
+   }
+  },
+  "door": {
+   "N": {
+    "file": "door/N.png",
+    "h": 1,
+    "w": 1
+   },
+   "W": {
+    "file": "door/W.png",
+    "h": 1,
+    "w": 1
+   }
+  },
+  "furniture": {
+   "alchemist_bench": {
+    "file": "furniture/alchemist_bench.png",
+    "h": 2,
+    "w": 3
+   },
+   "altar": {
+    "file": "furniture/altar.png",
+    "h": 2,
+    "w": 3
+   },
+   "barrel": {
+    "file": "furniture/barrel.png",
+    "h": 1,
+    "w": 1
+   },
+   "bed": {
+    "file": "furniture/bed.png",
+    "h": 1,
+    "w": 3
+   },
+   "bookcase": {
+    "file": "furniture/bookcase.png",
+    "h": 3,
+    "w": 1
+   },
+   "cage": {
+    "file": "furniture/cage.png",
+    "h": 1,
+    "w": 1
+   },
+   "chest": {
+    "file": "furniture/chest.png",
+    "h": 1,
+    "w": 1
+   },
+   "column": {
+    "file": "furniture/column.png",
+    "h": 3,
+    "w": 1
+   },
+   "dread_skull": {
+    "file": "furniture/dread_skull.png",
+    "h": 1,
+    "w": 1
+   },
+   "forge": {
+    "file": "furniture/forge.png",
+    "h": 2,
+    "w": 3
+   },
+   "lair_art": {
+    "file": "furniture/lair_art.png",
+    "h": 7,
+    "w": 9
+   },
+   "loom": {
+    "file": "furniture/loom.png",
+    "h": 3,
+    "w": 2
+   },
+   "machine": {
+    "file": "furniture/machine.png",
+    "h": 3,
+    "w": 1
+   },
+   "rack": {
+    "file": "furniture/rack.png",
+    "h": 3,
+    "w": 2
+   },
+   "rubble": {
+    "file": "furniture/rubble.png",
+    "h": 1,
+    "w": 1
+   },
+   "stairway": {
+    "file": "furniture/stairway.png",
+    "h": 2,
+    "w": 2
+   },
+   "stone_bench": {
+    "file": "furniture/stone_bench.png",
+    "h": 1,
+    "w": 2
+   },
+   "table": {
+    "file": "furniture/table.png",
+    "h": 2,
+    "w": 3
+   },
+   "throne": {
+    "file": "furniture/throne.png",
+    "h": 3,
+    "w": 2
+   },
+   "tomb": {
+    "file": "furniture/tomb.png",
+    "h": 3,
+    "w": 1
+   },
+   "tomb_sword": {
+    "file": "furniture/tomb_sword.png",
+    "h": 3,
+    "w": 2
+   },
+   "trapdoor": {
+    "file": "furniture/trapdoor.png",
+    "h": 1,
+    "w": 1
+   },
+   "weapon_rack": {
+    "file": "furniture/weapon_rack.png",
+    "h": 1,
+    "w": 3
+   }
+  },
+  "mark": {
+   "A": {
+    "file": "mark/A.png",
+    "h": 1,
+    "w": 1
+   },
+   "B": {
+    "file": "mark/B.png",
+    "h": 1,
+    "w": 1
+   },
+   "C": {
+    "file": "mark/C.png",
+    "h": 1,
+    "w": 1
+   },
+   "D": {
+    "file": "mark/D.png",
+    "h": 1,
+    "w": 1
+   },
+   "E": {
+    "file": "mark/E.png",
+    "h": 1,
+    "w": 1
+   },
+   "F": {
+    "file": "mark/F.png",
+    "h": 1,
+    "w": 1
+   },
+   "X": {
+    "file": "mark/X.png",
+    "h": 1,
+    "w": 1
+   }
+  },
+  "monster": {
+   "abomination": {
+    "file": "monster/abomination.png",
+    "h": 1,
+    "w": 1
+   },
+   "dread_sorcerer": {
+    "file": "monster/dread_sorcerer.png",
+    "h": 1,
+    "w": 1
+   },
+   "dread_warrior": {
+    "file": "monster/dread_warrior.png",
+    "h": 1,
+    "w": 1
+   },
+   "gargoyle": {
+    "file": "monster/gargoyle.png",
+    "h": 1,
+    "w": 1
+   },
+   "goblin": {
+    "file": "monster/goblin.png",
+    "h": 1,
+    "w": 1
+   },
+   "mummy": {
+    "file": "monster/mummy.png",
+    "h": 1,
+    "w": 1
+   },
+   "orc": {
+    "file": "monster/orc.png",
+    "h": 1,
+    "w": 1
+   },
+   "skeleton": {
+    "file": "monster/skeleton.png",
+    "h": 1,
+    "w": 1
+   },
+   "zombie": {
+    "file": "monster/zombie.png",
+    "h": 1,
+    "w": 1
+   }
+  }
+ }
+}

@@ -1,0 +1,9 @@
+{
+    "enable": true,
+    "path": "$HOUDINI_PACKAGE_PATH",
+    "env": [
+        {
+            "HOUDINI_OTLSCAN_PATH": "@/otls;@/hda;&"
+        }
+    ]
+}

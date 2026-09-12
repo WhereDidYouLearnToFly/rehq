@@ -1,0 +1,4 @@
+Digital assets go here. Houdini does not scan an "hda" directory by default -
+only "otls" - so houdini/rehq.json puts @/otls;@/hda on HOUDINI_OTLSCAN_PATH,
+which is what makes this one work. Verified by planting an asset here and
+finding it from a cold hython; the stock asset libraries load unchanged.

@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<shelfDocument>
+  <!-- This file contains definitions of shelves, toolbars, and tools.
+ It should not be hand-edited when it is being used by the application.
+ Note, that two definitions of the same element are not allowed in
+ a single file. -->
+
+  <tool name="rehq_quest_editor" label="Quest Editor" icon="SOP_grid">
+    <helpText><![CDATA[Correct map-ai-parsing's quest parse by clicking on the scan. Writes map-ai-parsing/work/manual.json, runs step 9, rebuilds the ten quest objects. Needs assets/quests/quests.hipnc open.]]></helpText>
+    <script scriptType="python"><![CDATA[# The Quest Editor lives with the rest of the quest-scene code, in
+# assets/quests/ beside build_quests_hou.py - which is $HIP whenever
+# quests.hipnc is the open scene, and the tool needs that scene open
+# anyway: it rebuilds /obj/quest_01..10 and reads $HIP/sprites.
+import os, sys, importlib
+import hou
+
+d = hou.expandString('$HIP')
+if not os.path.exists(os.path.join(d, 'quest_editor.py')):
+    raise hou.Error('Open assets/quests/quests.hipnc first - the Quest '
+                    'Editor loads from $HIP and edits that scene.')
+if d not in sys.path:
+    sys.path.insert(0, d)
+import quest_editor
+importlib.reload(quest_editor)   # so an edit to the file shows up here
+quest_editor.show()]]></script>
+  </tool>
+
+  <toolshelf name="rehq" label="rehq">
+    <memberTool name="rehq_quest_editor"/>
+  </toolshelf>
+</shelfDocument>

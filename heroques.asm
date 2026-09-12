@@ -9,6 +9,7 @@
     include "core/gfx/gfx_structures.i"
     include "game/menus/menu_structures.i"
     include "game/globals.i"
+    include "game/quest_structures.i"
 
     device zxspectrum128
     ; zxide: pin
@@ -107,6 +108,7 @@ init_font:
     include "data/fonts.asm"
     include "data/music_data.asm"
     include "data/card_data.asm"
+    include "data/quest_data.asm"
     include "core/zx0.asm"
     include "assets_generated.asm"
 
