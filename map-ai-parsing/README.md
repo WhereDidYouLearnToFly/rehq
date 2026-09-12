@@ -273,6 +273,69 @@ believed, and `quests_to_asm.py` before it reaches the game.
 `assets/quests/verify/qNN.png` is how you check a fix landed — it draws the
 data back over the scan, labelled, so a wrong square is obvious.
 
+## A second quest book
+
+Everything here is written for *one* pack, and says so nowhere else: the PDF is
+a constant, "ten quests" is a `range(1, 11)` in nine scripts, and every output
+name is flat — `ds/cNN.png`, `work/*.json`, one `quests_data.json`, one
+`sprites/`. Point step 0 at another book and it overwrites this one without a
+word. So the first job is not running the pipeline, it is giving the pack a
+name.
+
+**What is per-pack** — the PDF path, first page and map rect
+(`work/00_pages.py:12-14`); the quest count — `range(10)` in
+`00_pages.py:18`, `range(1, 11)` in `02_canon.py:27`, `03_grid.py:87`, `04_doors.py:79`,
+`05_monsters.py:57`, `06_letters.py:51`, `07_special.py:18`,
+`08_furniture.py:67`, `09_assemble.py:231` and `11_sprites.py:89`; the output
+paths, which are flat everywhere; the one data file (`09_assemble.py:332`) and
+the one sprite tree (`11_sprites.py:74`); and on the authored side
+`manual.json`, `catalog.json`, `sprites/`, `quest_editor/paths.py:34` and the
+ten objects `build_quests_hou.py:498` builds.
+
+**What carries over** — the detectors themselves, and `work/rooms.json`, *if*
+the new book is played on the same printed board. Kellar's Keep and Return of
+the Witch Lord are; a pack with a board of its own is a different job, and
+`rooms.json`, `/obj/heroquest_base` and the 26×19 in `quest_editor/paths.py:33`
+all have to be redone before any of this means anything.
+
+**What does not carry over even though it looks like it does** —
+`work/ctypes.json`. It names a monster and lists the cluster ids that are that
+monster, and step 5 numbers its clusters afresh against whatever set of maps it
+is given, so this book's ids are noise for the next one. Relabel it against the new `work/clusters.png`. The
+thresholds are the other half of this: step 3's mauve fraction and step 4's
+0.65 door score were set against *this* scan's paper and ink, and a book
+scanned on another machine may sit somewhere else.
+
+Then the order, once the pack is a parameter:
+
+1. The PDF into `assets/scans/`; set its path, `FIRST_QUEST_PAGE`, the quest
+   count and `MAP_RECT` — check the rect by eye on `hi/qNN.png`.
+2. Steps 0–2, **then stop and look at `ds/cNN.png` and `ds/plate.png`.** This is
+   the make-or-break: a frame the finder missed or a warp that is off makes
+   everything downstream meaningless. The plate is voted per pack — do not
+   reuse this book's.
+3. Steps 3–7, the detectors.
+4. Step 8, then read the contact sheets and write `manual.json`: furniture,
+   arrows, openings, titles, wandering monsters. This is most of the human
+   time — 190 pieces for the ten quests here.
+5. Relabel `ctypes.json` against the new `clusters.png`.
+6. Step 9, and read what it prints: whole rooms, sealed rooms, connectivity.
+   Those checks are how you know the parse held.
+7. Step 10, then correct by clicking in the Quest Editor.
+8. Step 11; new furniture names into `catalog.json`, bad cuts overridden in
+   `sprites_hand/`, and `work/sprites.png` to check it.
+9. `build_quests_hou.py` in Houdini — **and save the .hip**, or the scene keeps
+   the build it already had.
+10. `assets/quests_to_asm.py`, watching the three it flags here: no stairway
+    means no start square, a title over 28 columns draws cut off, and 32 is
+    `MAX_MONSTERS`. A second book is also a second `quest_data.asm` — about
+    1.8 KB of bank per ten quests.
+
+Two ways to do the naming. Thread a pack through — one constants module every
+step reads, outputs under `ds/<pack>/` and `assets/quests/<pack>/` — or copy
+both trees per pack and live with the duplication. The first is an hour of
+work; the second is free until the third book.
+
 ## What came out
 
 | Quest | Title | Squares | Doors | Monsters | Furniture | Notes |

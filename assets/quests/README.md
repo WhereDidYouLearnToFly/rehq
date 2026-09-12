@@ -38,6 +38,13 @@ scans: **everything it writes is in this folder.** Outside it, it reads
 `quest_editor/paths.py` names all of these once and nowhere else — if a path
 moves, that file is the only place that has to know.
 
+All of it is **one quest book's**. `manual.json`, `catalog.json`, `sprites/`,
+`quests_data.json` and the ten objects in the scene are the Crypt pack and
+nothing else; `quest_editor/paths.py:34` lists its ten quests by name. Nothing
+in the tool or the pipeline takes a pack as an argument, so a second book
+overwrites the first until one is threaded through — see **A second quest
+book** in `map-ai-parsing/README.md`.
+
 ## The editor's own files
 
 One class per file, and the pieces a class needs beside it:
