@@ -94,10 +94,16 @@ parts of the data:
   `/obj/heroquest_base` in the .hip.
 - **`ctypes.json`** — which icon cluster is which monster. Cluster ids match
   `work/clusters.png`, so a type can be re-checked or corrected there.
-- **`manual.json`** — quest titles, wandering monsters, furniture read off the
-  step-8 contact sheets, the escape arrows, and per-quest `fix` blocks that
-  correct anything steps 3–7 got wrong. Written by hand or by clicking on the
-  scan in `assets/quests/quest_editor.py`. See **Fixing it by hand** below.
+`manual.json` used to be in this directory and is **not** any more. It and
+`catalog.json` live in `assets/quests/`, with the tool that writes them —
+everything here is machine output, and those two are the opposite. See
+`assets/quests/README.md`.
+
+- **`../../assets/quests/manual.json`** — quest titles, wandering monsters,
+  furniture read off the step-8 contact sheets, the escape arrows, the
+  openings, and per-quest `fix` blocks that correct anything steps 3–7 got
+  wrong. Written by hand or by clicking on the scan in
+  `assets/quests/quest_editor.py`. See **Fixing it by hand** below.
 
 ### The bits worth knowing
 
@@ -204,7 +210,7 @@ The rest of this section is the same channel by hand, which is still the way to
 make a wholesale change, and the only way to read what is already there.
 
 **Furniture and the escape arrows** are already wholly hand-written, in
-`work/manual.json` under `"furniture"` and `"arrows"`. There is no detector to
+`assets/quests/manual.json` under `"furniture"` and `"arrows"`. There is no detector to
 override — step 8 only crops the contact sheets, a human reads them. Add,
 remove or move a piece by editing the list. A footprint is `[x0, y0, x1, y1,
 kind]`; the kind is any name in `assets/quests/sprites/index.json`, and a new

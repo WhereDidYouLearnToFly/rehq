@@ -1,5 +1,5 @@
 {
- "_note": "cut by map-ai-parsing/work/11_sprites.py from the canonical rasters; w/h are the sprite's footprint in board squares",
+ "_note": "cut by map-ai-parsing/work/11_sprites.py from the canonical rasters; w/h are the sprite's footprint in board squares. A file of the same name under assets/quests/sprites_hand/ replaces the cut and is never overwritten - that is where art by hand goes",
  "sprites": {
   "arrow": {
    "N": {
@@ -36,39 +36,49 @@
     "h": 2,
     "w": 3
    },
-   "altar": {
-    "file": "furniture/altar.png",
-    "h": 2,
-    "w": 3
+   "alchemist_bench_2x3": {
+    "file": "furniture/alchemist_bench_2x3.png",
+    "h": 3,
+    "w": 2
    },
    "barrel": {
     "file": "furniture/barrel.png",
     "h": 1,
     "w": 1
    },
-   "bed": {
-    "file": "furniture/bed.png",
+   "barrel_1x2": {
+    "file": "furniture/barrel_1x2.png",
+    "h": 2,
+    "w": 1
+   },
+   "barrel_2x1": {
+    "file": "furniture/barrel_2x1.png",
     "h": 1,
+    "w": 2
+   },
+   "book_stand": {
+    "file": "furniture/book_stand.png",
+    "h": 2,
     "w": 3
+   },
+   "book_stand_2x3": {
+    "file": "furniture/book_stand_2x3.png",
+    "h": 3,
+    "w": 2
    },
    "bookcase": {
     "file": "furniture/bookcase.png",
     "h": 3,
     "w": 1
    },
-   "cage": {
-    "file": "furniture/cage.png",
+   "bookcase_3x1": {
+    "file": "furniture/bookcase_3x1.png",
     "h": 1,
-    "w": 1
+    "w": 3
    },
    "chest": {
     "file": "furniture/chest.png",
     "h": 1,
-    "w": 1
-   },
-   "column": {
-    "file": "furniture/column.png",
-    "h": 3,
     "w": 1
    },
    "dread_skull": {
@@ -76,8 +86,43 @@
     "h": 1,
     "w": 1
    },
-   "forge": {
-    "file": "furniture/forge.png",
+   "furniture1x3": {
+    "file": "furniture/furniture1x3.png",
+    "h": 3,
+    "w": 1
+   },
+   "furniture1x3_2": {
+    "file": "furniture/furniture1x3_2.png",
+    "h": 3,
+    "w": 1
+   },
+   "furniture1x3_3": {
+    "file": "furniture/furniture1x3_3.png",
+    "h": 3,
+    "w": 1
+   },
+   "furniture2x1": {
+    "file": "furniture/furniture2x1.png",
+    "h": 1,
+    "w": 2
+   },
+   "furniture2x3": {
+    "file": "furniture/furniture2x3.png",
+    "h": 3,
+    "w": 2
+   },
+   "furniture3x1": {
+    "file": "furniture/furniture3x1.png",
+    "h": 1,
+    "w": 3
+   },
+   "furniture3x1_2": {
+    "file": "furniture/furniture3x1_2.png",
+    "h": 1,
+    "w": 3
+   },
+   "furniture3x2": {
+    "file": "furniture/furniture3x2.png",
     "h": 2,
     "w": 3
    },
@@ -101,40 +146,45 @@
     "h": 3,
     "w": 2
    },
+   "rack_3x2": {
+    "file": "furniture/rack_3x2.png",
+    "h": 2,
+    "w": 3
+   },
    "rubble": {
     "file": "furniture/rubble.png",
     "h": 1,
     "w": 1
    },
-   "stairway": {
-    "file": "furniture/stairway.png",
+   "stairway_1x2": {
+    "file": "furniture/stairway_1x2.png",
+    "h": 2,
+    "w": 1
+   },
+   "stairway_ne": {
+    "file": "furniture/stairway_ne.png",
     "h": 2,
     "w": 2
    },
-   "stone_bench": {
-    "file": "furniture/stone_bench.png",
-    "h": 1,
+   "stairway_nw": {
+    "file": "furniture/stairway_nw.png",
+    "h": 2,
+    "w": 2
+   },
+   "stairway_se": {
+    "file": "furniture/stairway_se.png",
+    "h": 2,
+    "w": 2
+   },
+   "stairway_sw": {
+    "file": "furniture/stairway_sw.png",
+    "h": 2,
     "w": 2
    },
    "table": {
     "file": "furniture/table.png",
     "h": 2,
     "w": 3
-   },
-   "throne": {
-    "file": "furniture/throne.png",
-    "h": 3,
-    "w": 2
-   },
-   "tomb": {
-    "file": "furniture/tomb.png",
-    "h": 3,
-    "w": 1
-   },
-   "tomb_sword": {
-    "file": "furniture/tomb_sword.png",
-    "h": 3,
-    "w": 2
    },
    "trapdoor": {
     "file": "furniture/trapdoor.png",

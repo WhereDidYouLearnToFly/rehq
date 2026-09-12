@@ -26,6 +26,7 @@ the hand always wins:
   furniture   manual.json["NN"]["furniture"] - the whole list, hand-written
               off the step-8 contact sheets. There is no detector to override.
   arrows      manual.json["NN"]["arrows"] - likewise.
+  openings    manual.json["NN"]["openings"] - likewise. See "Halls" below.
   everything  manual.json["NN"]["fix"] - add and del against what steps 3-7
   else        found:
 
@@ -49,6 +50,28 @@ there being a lie about what the scan says.
 
 The fixes are applied before the grid is forced and before the room and
 sealed-room checks, so a hand-placed monster or door counts for both.
+
+
+Halls
+-----
+The board's walls are not stored anywhere: two adjacent squares are separated
+by a wall when their room ids differ, which is the rule game/quest_structures.i
+states and the reason there is no wall list in the game either. A door is the
+hole a quest punches through one of those walls.
+
+An opening is the other thing a quest can do to one: take the wall away
+entirely, so the two rooms are one room for as long as this quest lasts. The
+pack does it with a printed cardboard overlay laid across the board - quest 1's
+tavern over room14, quest 10's dragon lair over rooms 3 and 4 - and those are
+the two the room check already reports as partial.
+
+An opening is written exactly like a door, as the NORTH or the WEST wall of a
+square, so the two index the same segment and a segment can carry one or the
+other but not both.
+
+`halls` is DERIVED from them and never written by hand: rooms joined by an
+opening, transitively, come out as one group. There is no second list saying
+which rooms are a hall, so there is nothing that can disagree with the walls.
 """
 import json
 
@@ -57,14 +80,23 @@ mons = json.load(open("work/monsters.json"))
 doors = json.load(open("work/doors.json"))
 lets = json.load(open("work/letters.json"))
 spec = json.load(open("work/special.json"))
-man = json.load(open("work/manual.json"))
+# The hand-authored files live with the tool that writes them, not with the
+# detector json this directory is otherwise full of - see assets/quests/README.md.
+AUTHORED = "../assets/quests/"
+
+man = json.load(open(AUTHORED + "manual.json"))
+# The catalogue names the placement layers. A layer is a list in manual.json
+# under the same key holding [x0, y0, x1, y1, name] rows, and every one of
+# them comes out in quests_data.json - so adding a layer to catalog.json is
+# all it takes to have one, here and in the editor, with no code to change.
+ITEM_LAYERS = sorted(json.load(open(AUTHORED + "catalog.json"))["layers"])
 rooms = json.load(open("work/rooms.json"))
 
 W, H = 26, 19
 
 
-def die(q, msg):
-    raise SystemExit('quest %s: %s\n  (manual.json["%s"]["fix"])' % (q, msg, q))
+def die(q, msg, key="fix"):
+    raise SystemExit('quest %s: %s\n  (manual.json["%s"][%r])' % (q, msg, q, key))
 
 
 def apply_fix(q, layer, rows, keylen):
@@ -103,6 +135,98 @@ def apply_fix(q, layer, rows, keylen):
     return rows
 
 
+# Square to room id, -1 for the corridor. The rectangles overlap on exactly
+# one square - (17,13), claimed by both room17 and room21, which is the L that
+# keeps data/board.asm out of the build - so they are laid down lowest id
+# first and the higher one wins, deterministically rather than by dict order.
+ROOM_AT = [[-1] * W for _ in range(H)]
+for _name in sorted(rooms, key=lambda s: int(s[4:])):
+    _r = rooms[_name]
+    for _dy in range(_r["h"]):
+        for _dx in range(_r["w"]):
+            ROOM_AT[_r["y"] + _dy][_r["x"] + _dx] = int(_name[4:])
+
+
+def _side(x, y, o):
+    """The square on the other side of this segment."""
+    return (x - 1, y) if o == "W" else (x, y - 1)
+
+
+def openings_of(q, quest_doors, gridstr):
+    """This quest's hand-written openings, checked against the board.
+
+    Every one of these is a claim that a wall the board has is not there this
+    quest, so every one of them has to name a wall that exists - the same rule
+    as a del that matches nothing, and for the same reason.
+    """
+    rows = [list(o) for o in man[q].get("openings", [])]
+    seen = set()
+    for o in rows:
+        if len(o) != 3 or o[2] not in ("N", "W"):
+            die(q, 'opening %r wants [x, y, "N"|"W"]' % (o,), "openings")
+        x, y, side = o
+        if not (0 <= x < W and 0 <= y < H):
+            die(q, "opening %r is off the 26x19 board" % (o,), "openings")
+        if tuple(o) in seen:
+            die(q, "opening %r is in the list twice" % (o,), "openings")
+        seen.add(tuple(o))
+        nx, ny = _side(x, y, side)
+        if not (0 <= nx < W and 0 <= ny < H):
+            die(q, "opening %r is the outside edge of the board, not a wall "
+                   "between two squares" % (o,), "openings")
+        if gridstr[y][x] != "o" or gridstr[ny][nx] != "o":
+            die(q, "opening %r has a square out of play on one side - open a "
+                   "wall into a room the quest does not use and the room is "
+                   "still not in it" % (o,), "openings")
+        if o in [list(d) for d in quest_doors]:
+            die(q, "opening %r already carries a door - a segment is a wall, a "
+                   "door or a gap, not two of them" % (o,), "openings")
+        a, b = ROOM_AT[y][x], ROOM_AT[ny][nx]
+        if a == b:
+            die(q, "opening %r has no wall to remove - both squares are %s"
+                   % (o, "room%d" % a if a >= 0 else "corridor"), "openings")
+    rows.sort(key=lambda o: (o[1], o[0], o[2]))
+    return rows
+
+
+def has_way_in(ri, segments):
+    """Does any of `segments` straddle room ri's boundary?
+
+    Both sides in their own parentheses: "a != b in c" chains in Python and
+    would quietly mean something else.
+    """
+    r = rooms["room%d" % ri]
+    cells = {(r["x"] + dx, r["y"] + dy)
+             for dx in range(r["w"]) for dy in range(r["h"])}
+    return any(((x, y) in cells) != (_side(x, y, o) in cells)
+               for x, y, o in segments)
+
+
+def halls_of(quest_open):
+    """Rooms an opening has joined, transitively. Derived, never written."""
+    parent = {}
+
+    def find(k):
+        parent.setdefault(k, k)
+        while parent[k] != k:
+            parent[k] = parent[parent[k]]
+            k = parent[k]
+        return k
+
+    for x, y, side in quest_open:
+        nx, ny = _side(x, y, side)
+        a, b = ROOM_AT[y][x], ROOM_AT[ny][nx]
+        if a < 0 or b < 0:
+            continue                    # opened onto the corridor, not a hall
+        ra, rb = find(a), find(b)
+        if ra != rb:
+            parent[ra] = rb
+    groups = {}
+    for k in list(parent):
+        groups.setdefault(find(k), set()).add(k)
+    return sorted(sorted(g) for g in groups.values() if len(g) > 1)
+
+
 out = {}
 for i in range(1, 11):
     q = "%02d" % i
@@ -120,7 +244,7 @@ for i in range(1, 11):
     for rows in (quest_mons, quest_marks, quest_spec):
         for r in rows:
             grid[r[1]][r[0]] = "o"
-    for f in man[q]["furniture"]:
+    for f in [r for layer in ITEM_LAYERS for r in man[q].get(layer, [])]:
         for xx in range(f[0], f[2] + 1):
             for yy in range(f[1], f[3] + 1):
                 if 0 <= xx < W and 0 <= yy < H:
@@ -144,25 +268,30 @@ for i in range(1, 11):
         elif f > 0.1:
             mixed.append("%s=%.2f" % (name, f))
 
+    quest_open = openings_of(q, quest_doors, gridstr)
+    halls = halls_of(quest_open)
+
     out[q] = dict(n=i, title=man[q]["title"], wandering=man[q]["wandering"],
                   grid=gridstr, rooms_used=used,
-                  doors=quest_doors, monsters=quest_mons,
-                  furniture=man[q]["furniture"], marks=quest_marks,
-                  arrows=man[q].get("arrows", []), special=quest_spec)
+                  doors=quest_doors, openings=quest_open, halls=halls,
+                  monsters=quest_mons,
+                  marks=quest_marks,
+                  arrows=man[q].get("arrows", []), special=quest_spec,
+                  **{layer: man[q].get(layer, []) for layer in ITEM_LAYERS})
 
-    sealed = []
-    for ri in used:
-        r = rooms["room%d" % ri]
-        cells = {(r["x"] + dx, r["y"] + dy) for dx in range(r["w"]) for dy in range(r["h"])}
-        # Both sides in their own parentheses: "a != b in c" chains in Python
-        # and would quietly mean something else.
-        if not any(((x, y) in cells) != (((x - 1, y) if o == "W" else (x, y - 1)) in cells)
-                   for x, y, o in quest_doors):
-            sealed.append(ri)
+    # A hall is entered through any of its rooms, so the far end of one is not
+    # sealed just because its own four walls are unbroken.
+    segments = quest_doors + quest_open
+    sealed = [ri for ri in used if not has_way_in(ri, segments)
+              and not any(has_way_in(r, segments)
+                          for h in halls if ri in h for r in h)]
 
-    print("q%s squares=%d doors=%d monsters=%d furniture=%d marks=%d rooms=%s%s"
+    print("q%s squares=%d doors=%d monsters=%d items=%s marks=%d rooms=%s%s%s"
           % (q, sum(r.count("o") for r in gridstr), len(out[q]["doors"]), len(out[q]["monsters"]),
-             len(out[q]["furniture"]), len(out[q]["marks"]), used,
+             " ".join("%s=%d" % (l, len(out[q][l])) for l in ITEM_LAYERS),
+             len(out[q]["marks"]), used,
+             ("  halls: " + " ".join("+".join(str(r) for r in h) for h in halls))
+             if halls else "",
              ("  partial: " + " ".join(mixed)) if mixed else ""))
     if sealed:
         print("   NO WAY IN: %s - a door step 4 cannot see; read it off the scan "
@@ -180,8 +309,20 @@ DOC = {
     "_doors": "a door is the NORTH or WEST wall of the square named, "
               "matching data/quest_data.asm. Step 4 finds the closed white "
               "capsule; anything the pack draws otherwise is hand-added in "
-              "work/manual.json under [\"fix\"][\"doors\"]",
+              "assets/quests/manual.json under [\"fix\"][\"doors\"]",
+    "_openings": "a wall this quest takes away, named the same way a door is - "
+                 "the NORTH or WEST wall of the square. The board's walls are "
+                 "not stored: two squares are walled apart when their room ids "
+                 "differ, so an opening is how a quest says two rooms are one "
+                 "hall, the way the pack does it with a cardboard overlay",
+    "_halls": "rooms the openings have joined, transitively - DERIVED in "
+              "09_assemble.py, never hand-written, so it cannot disagree",
     "_furniture": "[x0, y0, x1, y1, kind] - the ink footprint of the piece on the map",
+    "_layers": "the placement layers, listed in assets/quests/catalog.json "
+               "and named as keys here - 'furniture' is one of them. Every one "
+               "holds rows of the _furniture shape. The catalogue also says "
+               "what each layer offers and at what size, which is what the "
+               "Quest Editor places from",
     "_marks": "the note letters printed on the map (A..F, X), keyed to the quest notes",
     "_fixing": "every layer here can be corrected by hand without touching a "
                "detector - see 'Fixing it by hand' at the top of "

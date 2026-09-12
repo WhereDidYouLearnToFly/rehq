@@ -14,7 +14,7 @@
 import os, sys, importlib
 import hou
 
-d = hou.expandString('$HIP')
+d = hou.text.expandString('$HIP')
 if not os.path.exists(os.path.join(d, 'quest_editor.py')):
     raise hou.Error('Open assets/quests/quests.hipnc first - the Quest '
                     'Editor loads from $HIP and edits that scene.')

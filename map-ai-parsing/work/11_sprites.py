@@ -72,6 +72,8 @@ import numpy as np
 
 CS, W, H = 80, 26, 19
 OUT = "../assets/quests/sprites"
+HAND = "../assets/quests/sprites_hand"     # art by hand; this step never writes here
+CATALOG = "../assets/quests/catalog.json"  # the items, and the layers they sit in
 DATA = json.load(open("../assets/quests/quests_data.json"))["quests"]
 
 # Alpha ramp on the distance from the plate. Below LO is the board showing
@@ -278,17 +280,32 @@ def arrows(index, sheet):
               "%d of %d placements" % (len(boxes), len(at[o])))
 
 
-def furniture(index, sheet):
+def items(index, sheet):
     """One sprite per kind, cut from a single real instance.
 
     There is nothing to average here - two tombs are two drawings - so the
     job is picking which one. Modal footprint first, so the sprite has the
     aspect ratio the kind usually has; then most ink, which is the instance
     least likely to be half under a monster or clipped by the shading.
+
+    Every placement layer the catalogue declares, not just furniture, and each
+    one gets its own group in the index - so a layer of your own has sprites
+    the moment it has pieces.
     """
+    layers = sorted(json.load(open(CATALOG))["layers"])
+    for layer in layers:
+        _items_of(index, sheet, layer)
+
+
+def _items_of(index, sheet, layer):
+    # Every item the catalogue offers, so one that is drawn by hand but not
+    # yet placed on any map still reaches the index - which is the point of
+    # being able to draw one before you have anywhere to put it.
+    sizes = {i["name"]: (i["w"], i["h"])
+             for i in json.load(open(CATALOG))["layers"].get(layer, [])}
     at = {}
     for q in sorted(DATA):
-        for x0, y0, x1, y1, kind in DATA[q]["furniture"]:
+        for x0, y0, x1, y1, kind in DATA[q].get(layer, []):
             cells = {(x, y) for x in range(x0, x1 + 1) for y in range(y0, y1 + 1)}
             at.setdefault(kind, []).append(
                 (q, x0 * CS, y0 * CS, (x1 - x0 + 1) * CS, (y1 - y0 + 1) * CS, cells))
@@ -310,14 +327,41 @@ def furniture(index, sheet):
             if a.sum() > best_ink:
                 best, best_ink = (rgb, a), a.sum()
         if best is None:
-            print("  no clean instance for furniture %r" % kind)
+            print("  no clean instance for %s %r" % (layer, kind))
             continue
-        write(index, sheet, "furniture", kind, finish(*best, opaque=True), w, h,
+        write(index, sheet, layer, kind, finish(*best, opaque=True), w, h,
               "%dx%d, %d of %d that shape"
               % (w, h, shapes[(pw, ph)], len(at[kind])))
 
+    for kind in sorted(set(sizes) - set(at)):
+        if hand_art(layer, kind) is not None:
+            write(index, sheet, layer, kind, None, *sizes[kind], note="")
+
+
+def hand_art(kind, name):
+    """A drawing put there by hand, or None.
+
+    sprites_hand/ is the override channel: a cut off the scan is a guess at
+    what the printed square meant, and a guess you cannot replace by hand is
+    worth less than one you can. A file here wins over the cut, keeps its own
+    pixels, and is never written to by this step.
+    """
+    p = os.path.join(HAND, kind, "%s.png" % name)
+    if not os.path.exists(p):
+        return None
+    img = cv2.imread(p, cv2.IMREAD_UNCHANGED)
+    if img is None:
+        print("  %s/%s.png is not readable as an image" % (kind, name))
+        return None
+    if img.shape[2] == 3:                       # no alpha: make it opaque
+        img = np.dstack([img, np.full(img.shape[:2], 255, np.uint8)])
+    return img
+
 
 def write(index, sheet, kind, name, img, w, h, note):
+    hand = hand_art(kind, name)
+    if hand is not None:
+        img, note = hand, "by hand, %dx%d" % (w, h)
     if img is None:
         print("  nothing to cut for %s/%s" % (kind, name))
         return
@@ -355,13 +399,16 @@ def contact(sheet):
 
 if __name__ == "__main__":
     index, sheet = {}, []
-    for fn in (monsters, marks, doors, arrows, furniture):
+    for fn in (monsters, marks, doors, arrows, items):
         print("%s:" % fn.__name__)
         fn(index, sheet)
     os.makedirs(OUT, exist_ok=True)
     json.dump(dict(_note="cut by map-ai-parsing/work/11_sprites.py from the "
                          "canonical rasters; w/h are the sprite's footprint "
-                         "in board squares", sprites=index),
+                         "in board squares. A file of the same name under "
+                         "assets/quests/sprites_hand/ replaces the cut and is "
+                         "never overwritten - that is where art by hand goes",
+                   sprites=index),
               open(os.path.join(OUT, "index.json"), "w"), indent=1, sort_keys=True)
     contact(sheet)
     print("\n%d symbols -> %s, contact sheet -> work/sprites.png"

@@ -1,0 +1,5 @@
+Drawings by hand, one per item: sprites_hand/<layer>/<name>.png.
+
+11_sprites.py READS this directory and never writes to it, so a file here
+replaces the sprite cut off the scan and stays replaced however many times the
+sprites are regenerated. The Quest Editor's Sprite... button puts them here.

@@ -1,0 +1,172 @@
+{
+ "_note": "The items the editor offers, by layer. This file is the catalogue - a name and the footprint one click lays down. Hand-edit it, or use Items... in the Quest Editor, which writes it back in this shape. A layer here is a list in manual.json under the same key, holding [x0, y0, x1, y1, name] rows, and 09_assemble.py copies it into quests_data.json. Adding a layer here is all it takes to have one.",
+ "layers": {
+  "furniture": [
+   {
+    "name": "alchemist_bench",
+    "w": 3,
+    "h": 2
+   },
+   {
+    "name": "alchemist_bench_2x3",
+    "w": 2,
+    "h": 3
+   },
+   {
+    "name": "barrel",
+    "w": 1,
+    "h": 1
+   },
+   {
+    "name": "barrel_1x2",
+    "w": 1,
+    "h": 2
+   },
+   {
+    "name": "barrel_2x1",
+    "w": 2,
+    "h": 1
+   },
+   {
+    "name": "book_stand",
+    "w": 3,
+    "h": 2
+   },
+   {
+    "name": "book_stand_2x3",
+    "w": 2,
+    "h": 3
+   },
+   {
+    "name": "bookcase",
+    "w": 1,
+    "h": 3
+   },
+   {
+    "name": "bookcase_3x1",
+    "w": 3,
+    "h": 1
+   },
+   {
+    "name": "chest",
+    "w": 1,
+    "h": 1
+   },
+   {
+    "name": "dread_skull",
+    "w": 1,
+    "h": 1
+   },
+   {
+    "name": "furniture1x3",
+    "w": 1,
+    "h": 3
+   },
+   {
+    "name": "furniture1x3_2",
+    "w": 1,
+    "h": 3
+   },
+   {
+    "name": "furniture1x3_3",
+    "w": 1,
+    "h": 3
+   },
+   {
+    "name": "furniture2x1",
+    "w": 2,
+    "h": 1
+   },
+   {
+    "name": "furniture2x3",
+    "w": 2,
+    "h": 3
+   },
+   {
+    "name": "furniture3x1",
+    "w": 3,
+    "h": 1
+   },
+   {
+    "name": "furniture3x1_2",
+    "w": 3,
+    "h": 1
+   },
+   {
+    "name": "furniture3x2",
+    "w": 3,
+    "h": 2
+   },
+   {
+    "name": "lair_art",
+    "w": 9,
+    "h": 7
+   },
+   {
+    "name": "loom",
+    "w": 2,
+    "h": 3
+   },
+   {
+    "name": "machine",
+    "w": 1,
+    "h": 3
+   },
+   {
+    "name": "rack",
+    "w": 2,
+    "h": 3
+   },
+   {
+    "name": "rack_3x2",
+    "w": 3,
+    "h": 2
+   },
+   {
+    "name": "rubble",
+    "w": 1,
+    "h": 1
+   },
+   {
+    "name": "stairway_1x2",
+    "w": 1,
+    "h": 2
+   },
+   {
+    "name": "stairway_ne",
+    "w": 2,
+    "h": 2
+   },
+   {
+    "name": "stairway_nw",
+    "w": 2,
+    "h": 2
+   },
+   {
+    "name": "stairway_se",
+    "w": 2,
+    "h": 2
+   },
+   {
+    "name": "stairway_sw",
+    "w": 2,
+    "h": 2
+   },
+   {
+    "name": "table",
+    "w": 3,
+    "h": 2
+   },
+   {
+    "name": "trapdoor",
+    "w": 1,
+    "h": 1
+   },
+   {
+    "name": "weapon_rack",
+    "w": 3,
+    "h": 1
+   }
+  ]
+ }
+}

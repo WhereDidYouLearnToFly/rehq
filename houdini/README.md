@@ -14,16 +14,30 @@ houdini/
 
 ## Installing it
 
-Add one line to `$HOUDINI_USER_PREF_DIR/houdini.env` — on this machine
-`C:/Users/misha/OneDrive/Documents/houdini21.0/houdini.env`:
+Drop one file in `$HOUDINI_USER_PREF_DIR/packages/` — on this machine
+`C:/Users/misha/OneDrive/Documents/houdini21.0/packages/rehq.json`:
 
-```
-HOUDINI_PACKAGE_DIR = E:/github/rehq/houdini
+```json
+{ "package_path": "E:/github/rehq/houdini" }
 ```
 
-and restart Houdini. That is the only machine-specific part; everything it
-points at is in the repo. `rehq.json` adds its own directory to `HOUDINI_PATH`,
-and Houdini then scans `toolbar/` for shelves.
+and restart Houdini. That stub is the only machine-specific part; everything it
+points at is in the repo. Houdini scans `packages/` in the user pref dir,
+follows `package_path` to the repo's directory and loads `rehq.json` from
+there; `rehq.json` adds its own directory to `HOUDINI_PATH`, and Houdini then
+scans `toolbar/` for shelves. `package_path` wants the **directory**, not the
+`.json` inside it — pointing it at the file loads nothing.
+
+**Not** a `HOUDINI_PACKAGE_DIR` line in `houdini.env`, which is what this said
+first and does not work: packages are discovered before `houdini.env` is
+processed, so the variable is set in the session — `os.environ` shows it — and
+the package is still never scanned. The symptom is Houdini complaining about a
+missing shelf on startup, because the user's `default.shelf` has the `rehq` tab
+switched on in a shelf set and nothing ever defined it. Checked both ways from
+a cold `hython` against this pref dir: with the stub, `HOUDINI_PATH` gains
+`E:/github/rehq/houdini`, `HOUDINI_OTLSCAN_PATH` gains the asset dirs and
+`hou.shelves.shelves()` has `rehq`; with only the `houdini.env` line, none of
+the three.
 
 Assets need the other line in `rehq.json`. Houdini scans `otls/` for digital
 assets and **not** `hda/` — checked by planting an asset in each and looking

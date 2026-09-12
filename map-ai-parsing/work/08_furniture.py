@@ -10,7 +10,7 @@ drop the squares that are out of play, drop the squares holding a monster, drop
 the door footprints. What is left is furniture, note letters and the odd bit of
 board decoration, which connected components turn into croppable boxes.
 
-The reading itself lands in work/manual.json, by hand, as
+The reading itself lands in assets/quests/manual.json, by hand, as
 [x0, y0, x1, y1, kind] - the ink footprint of each piece.
 
     in:  ds/cNN.png, ds/plate.png, work/grids.json, work/monsters.json, work/doors.json

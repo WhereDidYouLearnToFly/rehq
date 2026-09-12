@@ -64,7 +64,7 @@ import json
 import hou
 
 # The digitised quests live next to the .hip file.
-DATA_FILE = os.path.join(hou.expandString("$HIP"), "quests_data.json")
+DATA_FILE = os.path.join(hou.text.expandString("$HIP"), "quests_data.json")
 DATA = json.load(open(DATA_FILE))["quests"]
 W, H = 26, 19
 ROOM_COUNT = 22
@@ -120,7 +120,7 @@ def read_board():
 
 ROOM_MAP, ROOM_SIZE = read_board()
 
-SPRITE_DIR = os.path.join(hou.expandString("$HIP"), "sprites")
+SPRITE_DIR = os.path.join(hou.text.expandString("$HIP"), "sprites")
 MAT = "/mat"
 MAT_PREFIX = "qsym_"
 
