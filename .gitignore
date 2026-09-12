@@ -3,3 +3,11 @@ out/
 *.sld
 *.lst
 assets_generated.asm
+
+# Houdini's automatic scene backups - it writes these itself, next to the .hip
+backup/
+*_bak[0-9]*.hipnc
+
+# Python
+__pycache__/
+*.pyc
